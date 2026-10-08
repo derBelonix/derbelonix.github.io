@@ -61,5 +61,3 @@ const PRODUKTE = [
     vinted: ''
   }
 ];
-  }
-];
