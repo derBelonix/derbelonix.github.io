@@ -10,7 +10,7 @@ const SHOP = {
   name: 'BELO VINTAGE',                         // Name deines Shops
   slogan: 'Handverlesene Vintage- & Streetwear-Pieces. Jedes Teil gibt es nur einmal.',
   marken: ['Nike', 'Adidas', 'Aelfric Eden', 'Carhartt', 'Ralph Lauren'],  // laufen im Banner durch
-  instagram: 'belo_vintage',                         // nur der Name, ohne @
+  instagram: 'benebln16',                         // nur der Name, ohne @
   email: 'belonix.business@icloud.com',        // Kontakt-Mail (wird im Footer angezeigt)
 
   // BEZAHLSYSTEM: hier die Web-App-URL aus Google Apps Script einfügen (endet auf /exec).
