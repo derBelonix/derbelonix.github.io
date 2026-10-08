@@ -86,7 +86,11 @@
     const p = PRODUKTE.find((x) => x.id === id); if (!p) return;
     cur = p; lastFocus = from || null;
     $('#carousel').innerHTML = p.bilder.map((src, i) => `<img src="${esc(src)}" alt="${esc(p.titel)} – Foto ${i + 1}">`).join('');
-    $('#dots').innerHTML = p.bilder.length > 1 ? p.bilder.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('') : '';
+    $('#thumbs').innerHTML = p.bilder.length > 1 ? p.bilder.map((src, i) => `<button type="button" data-i="${i}" aria-label="Foto ${i + 1}"${i ? '' : ' aria-current="true"'}><img src="${esc(src)}" alt=""></button>`).join('') : '';
+    const multi = p.bilder.length > 1;
+    $('#g-prev').hidden = !multi; $('#g-next').hidden = !multi; $('#g-count').hidden = !multi;
+    gal.n = p.bilder.length; gal.i = 0; updateGal();
+    requestAnimationFrame(() => { $('#carousel').scrollLeft = 0; });
     $('#d-brand').textContent = p.marke + ' · ' + p.kategorie;
     $('#d-title').textContent = p.titel;
     $('#d-price').textContent = euro(p.preis);
@@ -102,10 +106,35 @@
     $('#d-close').focus();
     history.replaceState(null, '', '#' + p.id);
   }
+  // ---------- Galerie: Pfeile, Vorschaubilder, Zähler, Tastatur ----------
+  const gal = { i: 0, n: 0 };
+  function updateGal() {
+    $('#g-count').textContent = (gal.i + 1) + ' / ' + gal.n;
+    $('#g-prev').disabled = gal.i <= 0; $('#g-next').disabled = gal.i >= gal.n - 1;
+    document.querySelectorAll('#thumbs button').forEach((t, j) => t.setAttribute('aria-current', String(j === gal.i)));
+    const act = document.querySelector('#thumbs button[aria-current="true"]');
+    if (act) act.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  function goTo(i) {
+    i = Math.max(0, Math.min(gal.n - 1, i)); const el = $('#carousel');
+    el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' }); gal.i = i; updateGal();
+  }
+  $('#g-prev').addEventListener('click', () => goTo(gal.i - 1));
+  $('#g-next').addEventListener('click', () => goTo(gal.i + 1));
+  $('#thumbs').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) goTo(+b.dataset.i); });
+  $('#carousel').addEventListener('click', () => { if (gal.n > 1) goTo(gal.i + 1 < gal.n ? gal.i + 1 : 0); });
+  let galT;
   $('#carousel').addEventListener('scroll', () => {
-    const el = $('#carousel'); const i = Math.round(el.scrollLeft / el.clientWidth);
-    document.querySelectorAll('#dots i').forEach((d, j) => d.classList.toggle('on', i === j));
+    clearTimeout(galT); galT = setTimeout(() => {
+      const el = $('#carousel'); const i = Math.round(el.scrollLeft / el.clientWidth);
+      if (i !== gal.i) { gal.i = i; updateGal(); }
+    }, 60);
   }, { passive: true });
+  document.addEventListener('keydown', (e) => {
+    if ($('#drawer').hidden || $('#step-item').hidden) return;
+    if (e.key === 'ArrowRight') goTo(gal.i + 1);
+    if (e.key === 'ArrowLeft') goTo(gal.i - 1);
+  });
 
   // ---------- Bezahlen (Stripe) ----------
   const LIVE = !!SHOP.bestellURL;

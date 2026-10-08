@@ -53,8 +53,8 @@
 </main>
 
 <section id="info" class="wrap info">
-  <div class="info-card"><span class="mono">01 · Bestellen</span><h3>Teil auswählen</h3><p>„Jetzt kaufen“ antippen, Adresse eintragen, fertig. Das Teil ist sofort für dich reserviert.</p></div>
-  <div class="info-card"><span class="mono">02 · Bezahlen</span><h3>Zahlungsinfo per Mail</h3><p id="pay-text"></p></div>
+  <div class="info-card"><span class="mono">01 · Bestellen</span><h3>Teil auswählen</h3><p>„Jetzt kaufen“ antippen und direkt sicher bezahlen. Deine Lieferadresse gibst du bei der Zahlung an.</p></div>
+  <div class="info-card"><span class="mono">02 · Bezahlen</span><h3>Sicher bezahlen</h3><p id="pay-text"></p></div>
   <div class="info-card"><span class="mono">03 · Versand</span><h3>Schnell bei dir</h3><p id="ship-text"></p></div>
 </section>
 
@@ -79,8 +79,13 @@
 
   <!-- Schritt 1: Artikel -->
   <section class="d-body" id="step-item">
-    <div class="carousel" id="carousel"></div>
-    <div class="dots" id="dots"></div>
+    <div class="gal">
+      <div class="carousel" id="carousel"></div>
+      <button class="gnav prev" id="g-prev" type="button" aria-label="Vorheriges Foto">‹</button>
+      <button class="gnav next" id="g-next" type="button" aria-label="Nächstes Foto">›</button>
+      <span class="gcount mono" id="g-count"></span>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
     <p class="mono d-brand" id="d-brand"></p>
     <h2 id="d-title"></h2>
     <p class="d-price" id="d-price"></p>
