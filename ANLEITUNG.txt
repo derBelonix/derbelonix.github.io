@@ -1,0 +1,49 @@
+DEIN VINTAGE-SHOP MIT BEZAHLSYSTEM – ANLEITUNG (Stripe + comdirect)
+==================================================================
+Ablauf für Kunden: Teil auswählen -> "Zahlungspflichtig bestellen" -> sichere Stripe-Bezahlseite
+(Karte, Apple Pay, Google Pay, Klarna, Lastschrift) + Lieferadresse -> fertig.
+Für dich: Geld kommt automatisch auf dein Bankkonto (comdirect), du bekommst eine Mail mit
+Artikel, Name und Adresse, das Teil ist im Shop VERKAUFT.
+
+A) SHOP ANPASSEN UND ONLINE STELLEN
+1. produkte.js mit Visual Studio Code öffnen, Shopdaten + Artikel eintragen, Fotos in "bilder".
+2. Auf GitHub hochladen (Repository deinname.github.io), Settings -> Pages -> main -> Save.
+   Deine Shop-Adresse: https://deinname.github.io
+
+B) STRIPE-KONTO (kostenlos, keine Grundgebühr, nur Gebühr pro Verkauf)
+1. dashboard.stripe.com/register -> Konto erstellen.
+2. Unternehmensart: "Einzelperson / Einzelunternehmen".
+   Website: deine GitHub-Adresse. Produktbeschreibung: Verkauf von Second-Hand-Kleidung.
+3. Bankkonto für Auszahlungen: deine comdirect-IBAN eintragen.
+4. Identität bestätigen (Ausweis) – das verlangt Stripe gesetzlich.
+5. Einstellungen -> Zahlungsmethoden: Karte, Apple Pay, Google Pay, Klarna, SEPA-Lastschrift aktivieren.
+6. Entwickler -> API-Schlüssel: den GEHEIMEN Schlüssel kopieren.
+   Erst im TESTMODUS (Schalter oben, Schlüssel beginnt mit sk_test_).
+
+C) BESTELLSYSTEM (Google Apps Script)
+1. sheets.new öffnen, Tabelle "Shop Bestellungen" nennen.
+2. Erweiterungen -> Apps Script -> Inhalt von bestellsystem/Code.gs einfügen.
+3. Oben ausfüllen: SHOP_URL (deine GitHub-Adresse) und STRIPE_SECRET (sk_test_...). Speichern.
+4. Funktion "setup" auswählen -> Ausführen -> Berechtigungen erlauben
+   ("Erweitert" -> "Zu ... wechseln" -> Zulassen).
+5. Bereitstellen -> Neue Bereitstellung -> Web-App -> Ausführen als: Ich,
+   Zugriff: Jeder -> Bereitstellen -> URL kopieren (endet auf /exec).
+6. In produkte.js eintragen:  bestellURL: '...exec'  -> auf GitHub speichern.
+
+D) TESTEN (Spielgeld)
+1. Im Shop ein Teil kaufen. Auf der Stripe-Seite Testkarte nutzen:
+   4242 4242 4242 4242, Ablaufdatum in der Zukunft (z. B. 12/30), CVC 123.
+2. Prüfen: Mail angekommen? Teil auf "Sold"? Zeile im Sheet?
+3. Teil wieder freigeben: Sheet -> Tab "Status" -> "verkauft" in "frei" ändern.
+
+E) LIVE SCHALTEN
+1. In Stripe den Testmodus ausschalten -> Live-Geheimschlüssel (sk_live_...) kopieren.
+2. In Code.gs bei STRIPE_SECRET eintragen, speichern.
+3. Bereitstellen -> Bereitstellungen verwalten -> Stift -> Version "Neue Version" -> Bereitstellen.
+Fertig – ab jetzt kommt echtes Geld auf dein comdirect-Konto (Stripe zahlt automatisch aus).
+
+WICHTIG
+- Der geheime Schlüssel gehört NUR in Code.gs – nie in produkte.js, nie posten, nie weitergeben.
+- Preise liest das System direkt aus deiner produkte.js auf GitHub. Preis geändert? Einfach dort speichern.
+- Kaufen zwei Leute gleichzeitig, bekommt der Zweite sein Geld automatisch zurück.
+- Impressum, Datenschutz und Widerruf ausfüllen, bevor du live gehst.

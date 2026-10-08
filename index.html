@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vintage Shop</title>
+<meta name="description" content="Handverlesene Vintage- und Streetwear-Teile. Jedes Teil gibt es nur einmal.">
+<meta name="theme-color" content="#F4F4F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0B0D" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="bar">
+  <a class="logo" href="#" id="logo">VINTAGE</a>
+  <nav class="links">
+    <a href="#shop">Shop</a>
+    <a href="#info">Infos</a>
+    <a href="#kontakt">Kontakt</a>
+  </nav>
+  <span class="live" id="live"><i></i><span id="live-n">0</span> verfügbar</span>
+</header>
+
+<section class="hero">
+  <p class="kicker mono">Einzelstücke · geprüft · gemessen</p>
+  <h1 id="hero-name">VINTAGE</h1>
+  <div class="hero-row">
+    <p class="slogan" id="hero-slogan"></p>
+    <a class="cta" href="#shop">Zum Drop <span aria-hidden="true">↓</span></a>
+  </div>
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="track" id="ticker"></div></div>
+
+<main id="shop" class="wrap">
+  <div class="filterbar" id="filterbar">
+    <div class="seg" id="cats" role="group" aria-label="Kategorie"></div>
+    <div class="fright">
+      <label class="field"><span>Größe</span><select id="f-size"><option value="">Alle</option></select></label>
+      <label class="field"><span>Sortierung</span>
+        <select id="f-sort">
+          <option value="neu">Neu zuerst</option>
+          <option value="preis-auf">Preis ↑</option>
+          <option value="preis-ab">Preis ↓</option>
+        </select></label>
+      <label class="switch"><input type="checkbox" id="f-avail"><span class="knob" aria-hidden="true"></span>Nur verfügbar</label>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<section id="info" class="wrap info">
+  <div class="info-card"><span class="mono">01 · Bestellen</span><h3>Teil auswählen</h3><p>„Jetzt kaufen“ antippen, Adresse eintragen, fertig. Das Teil ist sofort für dich reserviert.</p></div>
+  <div class="info-card"><span class="mono">02 · Bezahlen</span><h3>Zahlungsinfo per Mail</h3><p id="pay-text"></p></div>
+  <div class="info-card"><span class="mono">03 · Versand</span><h3>Schnell bei dir</h3><p id="ship-text"></p></div>
+</section>
+
+<footer id="kontakt" class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <div class="foot-name" id="foot-name">VINTAGE</div>
+      <div class="contact" id="contact"></div>
+    </div>
+    <nav class="legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="widerruf.html">Widerruf & Versand</a></nav>
+  </div>
+</footer>
+
+<!-- Produkt + Checkout (Seitenpanel / Bottom-Sheet) -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-title" hidden>
+  <div class="d-head">
+    <button class="icon-btn" id="d-back" type="button" aria-label="Zurück" hidden>←</button>
+    <span class="mono d-step" id="d-step">Artikel</span>
+    <button class="icon-btn" id="d-close" type="button" aria-label="Schließen">✕</button>
+  </div>
+
+  <!-- Schritt 1: Artikel -->
+  <section class="d-body" id="step-item">
+    <div class="carousel" id="carousel"></div>
+    <div class="dots" id="dots"></div>
+    <p class="mono d-brand" id="d-brand"></p>
+    <h2 id="d-title"></h2>
+    <p class="d-price" id="d-price"></p>
+    <dl class="specs" id="d-specs"></dl>
+    <p class="d-desc" id="d-desc"></p>
+    <div class="d-actions" id="d-actions"></div>
+  </section>
+
+  <!-- Schritt 2: Bezahlen -->
+  <section class="d-body" id="step-checkout" hidden>
+    <div class="mini" id="mini"></div>
+    <div class="sum" id="sum"></div>
+    <ul class="perks">
+      <li>Bezahlen mit Karte, Apple Pay, Google Pay, Klarna oder Lastschrift</li>
+      <li>Lieferadresse gibst du direkt bei der Zahlung an</li>
+      <li>Sicher verschlüsselt über Stripe – deine Kartendaten sehe ich nie</li>
+    </ul>
+    <label class="agree"><input type="checkbox" id="c-agree"><span>Ich habe die <a href="widerruf.html" target="_blank">Widerrufsbelehrung</a> und die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen.</span></label>
+    <p class="hint">Du wirst zur sicheren Bezahlseite weitergeleitet.</p>
+    <p class="err" id="c-err" role="alert"></p>
+    <button class="buy" type="button" id="pay-btn">Zahlungspflichtig bestellen</button>
+    <p class="demo-note" id="demo-note" hidden>Demo-Modus – Bezahlsystem noch nicht verbunden. Es wird nichts abgebucht.</p>
+  </section>
+
+  <!-- Schritt 3: Danke -->
+  <section class="d-body done" id="step-done" hidden>
+    <div class="check-big" aria-hidden="true">✓</div>
+    <h2>Danke für deine Bestellung!</h2>
+    <p id="done-text"></p>
+    <div class="ordercard" id="done-card"></div>
+    <button class="buy ghost" type="button" id="done-close">Weiter stöbern</button>
+  </section>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="produkte.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
