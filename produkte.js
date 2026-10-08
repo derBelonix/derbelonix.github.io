@@ -15,7 +15,7 @@ const SHOP = {
 
   // BEZAHLSYSTEM: hier die Web-App-URL aus Google Apps Script einfügen (endet auf /exec).
   // Solange das leer ist, läuft der Checkout im Demo-Modus (es wird nichts abgebucht).
-  bestellURL: '',
+  bestellURL: 'https://script.google.com/macros/s/AKfycbz59VvLjLv9jPttO4MF-IiUtoCr7q1EY1UeKk8hyI5CerolerWpojR1y95yPJ5dBXYw/exec',
 
   versandkosten: 4.99,                           // pro Bestellung in Euro
   versand: 'Versand mit DHL oder Hermes innerhalb von 1–2 Werktagen nach Zahlungseingang.',
