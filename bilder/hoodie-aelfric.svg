@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500" width="800" height="1000">
+<rect width="400" height="500" fill="#3B4A3F"/>
+<g transform="translate(0,40)"><path d="M150 70 Q200 40 250 70 L320 100 L360 210 L320 225 L300 170 L300 330 L100 330 L100 170 L80 225 L40 210 L80 100 Z M170 72 Q200 120 230 72" fill="none" stroke="#D9D4C7" stroke-width="5" stroke-linejoin="round" opacity=".85"/></g>
+<text x="24" y="470" font-family="monospace" font-size="16" fill="#D9D4C7" opacity=".8" letter-spacing="2">BEISPIELBILD · HOODIE</text></svg>
