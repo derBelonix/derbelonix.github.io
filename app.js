@@ -8,6 +8,46 @@
   const DEMO = !SHOP.bestellURL;  // ohne bestellURL kein Abgleich verkaufter Teile
   const soldRemote = new Set();
   const isSold = (p) => !!p.verkauft || soldRemote.has(p.id);
+  const byId = (id) => PRODUKTE.find((x) => x.id === id);
+  const SHIP = Number(SHOP.versandkosten || 0);
+  const MAX_CART = 10;
+
+  // ---------- Warenkorb (bleibt im Browser gespeichert) ----------
+  const CART_KEY = 'belo_warenkorb';
+  let cart = [];
+  try { cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]').filter((id) => typeof id === 'string'); } catch (e) { cart = []; }
+  const saveCart = () => { try { localStorage.setItem(CART_KEY, JSON.stringify(cart)); } catch (e) {} };
+  const inCart = (id) => cart.includes(id);
+  const cartItems = () => cart.map(byId).filter(Boolean);
+  function updateBadge(bump) {
+    const n = cart.length, b = document.querySelector('#cart-btn');
+    document.querySelector('#cart-n').textContent = n;
+    b.classList.toggle('has', n > 0);
+    b.setAttribute('aria-label', 'Warenkorb öffnen, ' + n + (n === 1 ? ' Teil' : ' Teile'));
+    if (bump) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+  }
+  function addToCart(id) {
+    if (inCart(id)) return true;
+    if (cart.length >= MAX_CART) { toast('Maximal ' + MAX_CART + ' Teile pro Bestellung.'); return false; }
+    cart.push(id); saveCart(); updateBadge(true); render(); return true;
+  }
+  function removeFromCart(ids) {
+    const before = cart.length; cart = cart.filter((id) => !ids.includes(id));
+    if (cart.length !== before) { saveCart(); updateBadge(); render(); }
+  }
+  // verkaufte oder gelöschte Teile automatisch aus dem Korb nehmen
+  function pruneCart() {
+    const gone = cart.filter((id) => { const p = byId(id); return !p || isSold(p); });
+    if (!gone.length) return [];
+    removeFromCart(gone); return gone;
+  }
+  window.addEventListener('storage', (e) => {
+    if (e.key !== CART_KEY) return;
+    try { cart = JSON.parse(e.newValue || '[]'); } catch (err) { cart = []; }
+    updateBadge(); render();
+    if (!$('#drawer').hidden && !$('#step-checkout').hidden) renderCart();
+    if (!$('#drawer').hidden && !$('#step-item').hidden && cur) renderActions(cur);
+  });
 
   // ---------- Grunddaten ----------
   document.title = SHOP.name + ' – Vintage & Streetwear';
@@ -55,7 +95,7 @@
         <span class="media">
           <img src="${esc(p.bilder[0])}" alt="" loading="lazy">
           ${p.bilder[1] && !sold ? `<img class="alt" src="${esc(p.bilder[1])}" alt="" loading="lazy">` : ''}
-          ${sold ? '<span class="pill">Sold</span>' : p.neu ? '<span class="pill new">Neu</span>' : ''}
+          ${sold ? '<span class="pill">Sold</span>' : inCart(p.id) ? '<span class="pill incart">Im Warenkorb</span>' : p.neu ? '<span class="pill new">Neu</span>' : ''}
           <span class="size">${esc(p.groesse)}</span>
         </span>
         <span class="meta"><span class="b">${esc(p.marke)}</span><span class="t">${esc(p.titel)}</span><span class="p">${esc(euro(p.preis))}</span></span>
@@ -70,21 +110,32 @@
     try {
       const r = await fetch(SHOP.bestellURL + (SHOP.bestellURL.includes('?') ? '&' : '?') + 't=' + Date.now());
       const d = await r.json();
-      if (d && d.sold) { soldRemote.clear(); d.sold.forEach((id) => soldRemote.add(String(id))); render(); }
+      if (d && d.sold) {
+        soldRemote.clear(); d.sold.forEach((id) => soldRemote.add(String(id))); render();
+        const gone = pruneCart();
+        if (gone.length) {
+          toast((gone.length === 1 ? '„' + ((byId(gone[0]) || {}).titel || 'Ein Teil') + '“ wurde verkauft' : gone.length + ' Teile wurden verkauft') + ' und aus deinem Warenkorb entfernt.');
+          if (!$('#drawer').hidden && !$('#step-checkout').hidden) renderCart();
+        }
+      }
     } catch (e) { /* offline oder noch nicht eingerichtet: Seite funktioniert trotzdem */ }
   }
 
   // ---------- Drawer ----------
-  let cur = null, lastFocus = null;
+  let cur = null, lastFocus = null, cartFromItem = false;
   function step(name) {
     ['item', 'checkout', 'done'].forEach((s) => ($('#step-' + s).hidden = s !== name));
-    $('#d-step').textContent = { item: 'Artikel', checkout: 'Kasse · Bezahlen', done: 'Bezahlt' }[name];
-    $('#d-back').hidden = name !== 'checkout';
+    $('#d-step').textContent = { item: 'Artikel', checkout: 'Warenkorb · Kasse', done: 'Bezahlt' }[name];
+    $('#d-back').hidden = !(name === 'checkout' && cartFromItem);
     $('#step-' + name).scrollTop = 0;
   }
+  function openDrawer() {
+    if (!$('#drawer').hidden) return;
+    $('#scrim').hidden = false; $('#drawer').hidden = false; document.body.style.overflow = 'hidden';
+  }
   function openItem(id, from) {
-    const p = PRODUKTE.find((x) => x.id === id); if (!p) return;
-    cur = p; lastFocus = from || null;
+    const p = byId(id); if (!p) return;
+    cur = p; if (from) lastFocus = from;
     $('#carousel').innerHTML = p.bilder.map((src, i) => `<img src="${esc(src)}" alt="${esc(p.titel)} – Foto ${i + 1}">`).join('');
     $('#thumbs').innerHTML = p.bilder.length > 1 ? p.bilder.map((src, i) => `<button type="button" data-i="${i}" aria-label="Foto ${i + 1}"${i ? '' : ' aria-current="true"'}><img src="${esc(src)}" alt=""></button>`).join('') : '';
     const multi = p.bilder.length > 1;
@@ -97,15 +148,31 @@
     const specs = { 'Größe': p.groesse, 'Zustand': p.zustand, ...(p.masse || {}) };
     $('#d-specs').innerHTML = Object.entries(specs).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
     $('#d-desc').textContent = p.beschreibung || '';
-    $('#d-actions').innerHTML = isSold(p)
-      ? '<div class="soldbox">Schon verkauft – schnell sein lohnt sich beim nächsten Drop.</div>'
-      : `<button class="buy" type="button" id="go-buy">Jetzt kaufen · ${esc(euro(p.preis))}</button>`;
-    const gb = $('#go-buy'); if (gb) gb.addEventListener('click', openCheckout);
-    step('item');
-    $('#scrim').hidden = false; $('#drawer').hidden = false; document.body.style.overflow = 'hidden';
+    renderActions(p);
+    step('item'); openDrawer();
     $('#d-close').focus();
     history.replaceState(null, '', '#' + p.id);
   }
+  function renderActions(p) {
+    const box = $('#d-actions');
+    if (isSold(p)) { box.innerHTML = '<div class="soldbox">Schon verkauft – schnell sein lohnt sich beim nächsten Drop.</div>'; return; }
+    if (inCart(p.id)) {
+      box.innerHTML = `<button class="buy" type="button" data-act="cart">Im Warenkorb ✓ · Zur Kasse</button>
+        <button class="buy ghost" type="button" data-act="more">Weiter stöbern</button>`;
+    } else {
+      box.innerHTML = `<button class="buy" type="button" data-act="add">In den Warenkorb · ${esc(euro(p.preis))}</button>
+        <button class="buy ghost" type="button" data-act="now">Direkt kaufen</button>`;
+    }
+  }
+  $('#d-actions').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-act]'); if (!b || !cur) return;
+    const a = b.dataset.act;
+    if (a === 'add') { if (addToCart(cur.id)) { toast('„' + cur.titel + '“ liegt im Warenkorb'); renderActions(cur); } }
+    else if (a === 'now') { if (addToCart(cur.id)) openCart(true); }
+    else if (a === 'cart') openCart(true);
+    else if (a === 'more') closeDrawer();
+  });
+
   // ---------- Galerie: Pfeile, Vorschaubilder, Zähler, Tastatur ----------
   const gal = { i: 0, n: 0 };
   function updateGal() {
@@ -136,6 +203,41 @@
     if (e.key === 'ArrowLeft') goTo(gal.i - 1);
   });
 
+  // ---------- Warenkorb-Ansicht ----------
+  function openCart(fromItem) {
+    cartFromItem = !!fromItem && !!cur;
+    if (!fromItem) lastFocus = $('#cart-btn');
+    pruneCart();
+    renderCart();
+    $('#c-err').textContent = '';
+    step('checkout'); openDrawer();
+    history.replaceState(null, '', '#warenkorb');
+  }
+  function renderCart() {
+    const items = cartItems().filter((p) => !isSold(p));
+    const empty = !items.length;
+    $('#cart-empty').hidden = !empty; $('#cart-pay').hidden = empty; $('#cartlist').hidden = empty;
+    if (empty) return;
+    $('#cartlist').innerHTML = items.map((p) => `<div class="crow">
+        <button type="button" class="crow-open" data-open="${esc(p.id)}" aria-label="${esc(p.titel)} ansehen"><img src="${esc(p.bilder[0])}" alt=""></button>
+        <div class="crow-t"><b>${esc(p.titel)}</b><span>Gr. ${esc(p.groesse)} · ${esc(p.zustand)}</span><span class="cp">${esc(euro(p.preis))}</span></div>
+        <button type="button" class="rm" data-rm="${esc(p.id)}" aria-label="${esc(p.titel)} entfernen">✕</button>
+      </div>`).join('');
+    const sub = items.reduce((s, p) => s + Number(p.preis), 0), total = sub + SHIP;
+    $('#sum').innerHTML = `<span>${items.length} ${items.length === 1 ? 'Artikel' : 'Artikel'}</span><span>${euro(sub)}</span>
+      <span>Versand <small>(nur einmal)</small></span><span>${euro(SHIP)}</span>
+      <span class="tot">Gesamt</span><span class="tot">${euro(total)}</span>`;
+    const btn = $('#pay-btn'); btn.disabled = false; btn.textContent = 'Zahlungspflichtig bestellen · ' + euro(total);
+    $('#demo-note').hidden = LIVE;
+  }
+  $('#cartlist').addEventListener('click', (e) => {
+    const rm = e.target.closest('[data-rm]');
+    if (rm) { const p = byId(rm.dataset.rm); removeFromCart([rm.dataset.rm]); renderCart(); if (p) toast('„' + p.titel + '“ entfernt'); return; }
+    const op = e.target.closest('[data-open]'); if (op) openItem(op.dataset.open);
+  });
+  $('#cart-btn').addEventListener('click', () => openCart(false));
+  $('#cart-shop').addEventListener('click', () => { closeDrawer(); document.querySelector('#shop').scrollIntoView({ behavior: 'smooth' }); });
+
   // ---------- Bezahlen (Stripe) ----------
   const LIVE = !!SHOP.bestellURL;
   async function api(body) {
@@ -143,69 +245,74 @@
     return r.json();
   }
   const ERR = {
-    verkauft: 'Zu spät – dieses Teil wurde gerade verkauft.',
-    unbekannt: 'Dieser Artikel ist gerade nicht kaufbar. Lade die Seite neu.',
+    verkauft: 'Zu spät – ein Teil wurde gerade verkauft und aus deinem Warenkorb entfernt. Prüf kurz deinen Warenkorb.',
+    unbekannt: 'Ein Teil in deinem Warenkorb ist gerade nicht kaufbar und wurde entfernt. Prüf kurz deinen Warenkorb.',
+    leer: 'Dein Warenkorb ist leer.',
+    zuviel: 'Maximal ' + MAX_CART + ' Teile pro Bestellung.',
     busy: 'Gerade ist viel los. Versuch es in ein paar Sekunden nochmal.',
     offen: 'Die Zahlung ist noch nicht abgeschlossen.'
   };
   const agreed = () => $('#c-agree').checked;
   $('#c-agree').addEventListener('change', () => { if (agreed()) $('#c-err').textContent = ''; });
 
-  function finish(p, res) {
-    if (p) soldRemote.add(p.id);
-    render();
+  function finish(res) {
+    const ids = res.ids || (res.id ? [res.id] : []);
+    ids.forEach((id) => soldRemote.add(id));
+    removeFromCart(ids); render();
+    const items = ids.map(byId).filter(Boolean);
     $('#done-text').textContent = res.demo
       ? 'Demo-Modus: So sieht es nach einem Kauf aus. Mit verbundenem Stripe geht das Geld auf dein Konto und du bekommst eine Mail mit Name und Adresse.'
       : 'Deine Zahlung ist eingegangen. Eine Bestätigung ist per Mail unterwegs, dein Paket geht in 1–2 Werktagen raus.';
+    const lines = items.length ? items.map((p) => `<div>${esc(p.titel)} · Gr. ${esc(p.groesse)}</div>`).join('') : `<div>${esc(res.titel || '')}</div>`;
+    const ref = res.erstattet && res.erstattet.length
+      ? `<div style="color:var(--bad)">Leider kurz vor dir verkauft und automatisch erstattet: ${esc(res.erstattet.join(', '))}</div>` : '';
     $('#done-card').innerHTML = `<div><span class="mono">Bestellnr.</span> <b>${esc(res.bestellnr)}</b></div>
-      <div>${esc(p ? p.titel + ' · Gr. ' + p.groesse : res.titel || '')}</div><div><b>${euro(res.gesamt)}</b> bezahlt inkl. Versand</div>
+      ${lines}<div><b>${euro(res.gesamt)}</b> bezahlt inkl. Versand</div>${ref}
       ${res.name ? `<div style="color:var(--muted)">Lieferung an ${esc(res.name)}${res.adresse ? ', ' + esc(res.adresse) : ''}</div>` : ''}`;
     step('done'); toast('Danke! Bestellung ' + res.bestellnr);
   }
 
-  function openCheckout() {
-    const p = cur, total = p.preis + (SHOP.versandkosten || 0);
-    $('#mini').innerHTML = `<img src="${esc(p.bilder[0])}" alt=""><div><b>${esc(p.titel)}</b><span>Gr. ${esc(p.groesse)} · ${esc(p.zustand)}</span></div>`;
-    $('#sum').innerHTML = `<span>Artikel</span><span>${euro(p.preis)}</span><span>Versand</span><span>${euro(SHOP.versandkosten || 0)}</span>
-      <span class="tot">Gesamt</span><span class="tot">${euro(total)}</span>`;
-    $('#c-err').textContent = '';
-    $('#pay-btn').textContent = 'Zahlungspflichtig bestellen · ' + euro(total);
-    $('#pay-btn').disabled = false;
-    $('#demo-note').hidden = LIVE;
-    step('checkout');
-  }
   $('#pay-btn').addEventListener('click', async () => {
-    const p = cur, total = p.preis + (SHOP.versandkosten || 0);
+    const items = cartItems().filter((p) => !isSold(p));
+    if (!items.length) { renderCart(); return; }
+    const total = items.reduce((s, p) => s + Number(p.preis), 0) + SHIP;
     if (!agreed()) { $('#c-err').textContent = 'Bitte bestätige zuerst die Checkbox.'; return; }
     const btn = $('#pay-btn'); btn.disabled = true; btn.textContent = 'Weiter zur Bezahlung …';
     if (!LIVE) {
       await new Promise((r) => setTimeout(r, 900));
-      finish(p, { demo: true, bestellnr: 'DEMO-0001', gesamt: total, name: 'Max Muster', adresse: 'Musterweg 1, 50667 Köln' });
+      finish({ demo: true, bestellnr: 'DEMO-0001', gesamt: total, name: 'Max Muster', adresse: 'Musterweg 1, 50667 Köln', ids: items.map((p) => p.id) });
       return;
     }
     try {
-      const res = await api({ action: 'create', id: p.id });
+      const res = await api({ action: 'create', ids: items.map((p) => p.id) });
       if (res.ok && res.url) { location.href = res.url; return; }
+      if ((res.error === 'verkauft' || res.error === 'unbekannt') && res.ids && res.ids.length) {
+        if (res.error === 'verkauft') res.ids.forEach((id) => soldRemote.add(id));
+        removeFromCart(res.ids); renderCart();
+      }
       $('#c-err').textContent = ERR[res.error] || 'Die Bezahlung konnte nicht gestartet werden. Versuch es gleich nochmal.';
-      if (res.error === 'verkauft') { soldRemote.add(p.id); render(); }
     } catch (e) { $('#c-err').textContent = 'Keine Verbindung. Versuch es gleich nochmal.'; }
-    btn.disabled = false; btn.textContent = 'Zahlungspflichtig bestellen · ' + euro(total);
+    if (!$('#cart-pay').hidden) renderCart();
   });
-  $('#d-back').addEventListener('click', () => step('item'));
+  $('#d-back').addEventListener('click', () => { if (cur) openItem(cur.id); });
 
   // Rückkehr von der Stripe-Bezahlseite: ?bezahlt=cs_...
   async function handleReturn() {
     const sid = new URLSearchParams(location.search).get('bezahlt');
     if (!sid || !LIVE) return false;
     history.replaceState(null, '', location.pathname);
-    step('done');
+    cartFromItem = false; step('done');
     $('#done-text').textContent = 'Zahlung wird bestätigt …'; $('#done-card').innerHTML = '';
-    $('#scrim').hidden = false; $('#drawer').hidden = false; document.body.style.overflow = 'hidden';
+    openDrawer();
     for (let i = 0; i < 4; i++) {
       try {
         const res = await api({ action: 'confirm', session: sid });
-        if (res.ok) { finish(PRODUKTE.find((x) => x.id === res.id) || null, res); return true; }
-        if (res.error === 'verkauft') { $('#done-text').textContent = 'Das Teil wurde kurz vor dir verkauft. Dein Geld wird automatisch erstattet – du bekommst eine Mail.'; return true; }
+        if (res.ok) { finish(res); return true; }
+        if (res.error === 'verkauft') {
+          if (res.ids) { res.ids.forEach((id) => soldRemote.add(id)); removeFromCart(res.ids); render(); }
+          $('#done-text').textContent = 'Deine Teile wurden kurz vor dir verkauft. Dein Geld wird automatisch erstattet – du bekommst eine Mail.';
+          return true;
+        }
       } catch (e) {}
       await new Promise((r) => setTimeout(r, 2500));
     }
@@ -216,7 +323,7 @@
   function closeDrawer() {
     $('#scrim').hidden = true; $('#drawer').hidden = true; document.body.style.overflow = '';
     history.replaceState(null, '', location.pathname + location.search);
-    if (lastFocus) lastFocus.focus();
+    if (lastFocus && document.body.contains(lastFocus)) lastFocus.focus();
   }
   $('#d-close').addEventListener('click', closeDrawer);
   $('#done-close').addEventListener('click', closeDrawer);
@@ -226,11 +333,13 @@
   let tt;
   function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 3200); }
 
+  updateBadge();
   render();
   syncSold().then(async () => {
     if (await handleReturn()) return;
     const h = decodeURIComponent(location.hash.slice(1));
-    if (h && PRODUKTE.some((p) => p.id === h)) openItem(h);
+    if (h === 'warenkorb') openCart(false);
+    else if (h && PRODUKTE.some((p) => p.id === h)) openItem(h);
   });
   setInterval(syncSold, 60000);
 })();

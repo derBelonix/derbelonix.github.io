@@ -22,6 +22,10 @@
     <a href="#kontakt">Kontakt</a>
   </nav>
   <span class="live" id="live"><i></i><span id="live-n">0</span> verfügbar</span>
+  <button class="cartbtn" id="cart-btn" type="button" aria-label="Warenkorb öffnen, 0 Teile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+    <span class="lbl">Warenkorb</span><span class="cnt" id="cart-n">0</span>
+  </button>
 </header>
 
 <section class="hero">
@@ -53,7 +57,7 @@
 </main>
 
 <section id="info" class="wrap info">
-  <div class="info-card"><span class="mono">01 · Bestellen</span><h3>Teil auswählen</h3><p>„Jetzt kaufen“ antippen und direkt sicher bezahlen. Deine Lieferadresse gibst du bei der Zahlung an.</p></div>
+  <div class="info-card"><span class="mono">01 · Bestellen</span><h3>Teil auswählen</h3><p>Teile in den Warenkorb legen und alles zusammen sicher bezahlen – Versand zahlst du nur einmal. Deine Lieferadresse gibst du bei der Zahlung an.</p></div>
   <div class="info-card"><span class="mono">02 · Bezahlen</span><h3>Sicher bezahlen</h3><p id="pay-text"></p></div>
   <div class="info-card"><span class="mono">03 · Versand</span><h3>Schnell bei dir</h3><p id="ship-text"></p></div>
 </section>
@@ -94,9 +98,16 @@
     <div class="d-actions" id="d-actions"></div>
   </section>
 
-  <!-- Schritt 2: Bezahlen -->
+  <!-- Schritt 2: Warenkorb + Bezahlen -->
   <section class="d-body" id="step-checkout" hidden>
-    <div class="mini" id="mini"></div>
+    <h2 class="cart-h">Dein Warenkorb</h2>
+    <div class="cartlist" id="cartlist"></div>
+    <div class="cart-empty" id="cart-empty" hidden>
+      <p>Dein Warenkorb ist leer.</p>
+      <button class="buy ghost" type="button" id="cart-shop">Zum Shop</button>
+    </div>
+    <div id="cart-pay">
+    <p class="cart-note mono">Jedes Teil gibt es nur einmal – reserviert ist es erst nach der Zahlung.</p>
     <div class="sum" id="sum"></div>
     <ul class="perks">
       <li>Bezahlen mit Karte, Apple Pay, Google Pay, Klarna oder Lastschrift</li>
@@ -108,6 +119,7 @@
     <p class="err" id="c-err" role="alert"></p>
     <button class="buy" type="button" id="pay-btn">Zahlungspflichtig bestellen</button>
     <p class="demo-note" id="demo-note" hidden>Demo-Modus – Bezahlsystem noch nicht verbunden. Es wird nichts abgebucht.</p>
+    </div>
   </section>
 
   <!-- Schritt 3: Danke -->
