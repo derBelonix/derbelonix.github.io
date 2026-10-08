@@ -54,7 +54,7 @@ const PRODUKTE = [
     zustand: '8/10 – Vintage-Look, leichte Gebrauchsspuren',
     preis: 55,
     bilder: ['bilder/ae-beststuff-jacke-1.jpg', 'bilder/ae-beststuff-jacke-2.jpg', 'bilder/ae-beststuff-jacke-4.jpg', 'bilder/ae-beststuff-jacke-3.jpg', 'bilder/ae-beststuff-jacke-5.jpg'],
-    masse: { 'Brustbreite': 'ca. 61 cm', 'Länge': 'ca. 60 cm', 'Passform': 'Boxy / cropped' },
+    masse: { 'Brustbreite': 'ca. 78 cm', 'Länge': 'ca. 60 cm', 'Passform': 'Boxy / cropped' },
     beschreibung: 'Racing-Jacke in Wildlederoptik mit Teddy-Futter und offenen Teddy-Kanten. Großer "BEST STUFF"-Print mit roten Streifen, Karo-Muster an den Ärmeln, Stehkragen mit Teddyfell, zwei Taschen. Leichte Gebrauchsspuren, passen zum Vintage-Look.',
     neu: true,
     verkauft: false,
