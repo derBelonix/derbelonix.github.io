@@ -12,10 +12,7 @@ const SHOP = {
   marken: ['Nike', 'Adidas', 'Aelfric Eden', 'Carhartt', 'Ralph Lauren'],  // laufen im Banner durch
   instagram: 'benebln16',                         // nur der Name, ohne @
   email: 'belonix.business@icloud.com',        // Kontakt-Mail (wird im Footer angezeigt)
-  // Gutscheine hier selbst verwalten: Code, Rabatt-Prozent und Aktivstatus.
-  gutscheine: {
-    'BELO20-VXCT': { prozent: 20, aktiv: true }
-  },
+  // Gutscheine werden sicher serverseitig in Google Sheets verwaltet.
 
   // BEZAHLSYSTEM: hier die Web-App-URL aus Google Apps Script einfügen (endet auf /exec).
   // Solange das leer ist, läuft der Checkout im Demo-Modus (es wird nichts abgebucht).
