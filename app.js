@@ -6,7 +6,7 @@
   /* ===== RABATT-SPIEL – Einstellungen ===== */
   const SPIEL = {
     prozent: 20,           // Rabatt in Prozent
-    versuche: 3,           // Versuche pro Tag und Gerät
+    versuche: 0,           // 0 = unbegrenzt spielen, bis ein Treffer gelingt
     toleranz: 0.014,       // Trefferbreite als Anteil des Spielfelds (kleiner = schwerer)
     flugzeit: [0.95, 1.25],// Sekunden für einmal quer (kleiner = schneller)
     anKasse: false         // true erst, wenn dein Apps Script den Code annimmt (siehe Anleitung)
@@ -663,23 +663,24 @@
   function triesUI() {
     const btn = $('#play-btn');
     if (code) { $('#tries').textContent = 'Gewonnen! Dein Code ist aktiv.'; btn.textContent = 'Zum Spaß nochmal'; btn.disabled = false; return; }
-    const left = SPIEL.versuche - gs.used;
-    $('#tries').innerHTML = Array.from({ length: SPIEL.versuche }, (_, i) => `<i class="${i < left ? 'on' : ''}"></i>`).join('') +
-      `<span>${left > 0 ? left + (left === 1 ? ' Versuch' : ' Versuche') + ' übrig heute' : 'Morgen wieder'}</span>`;
-    btn.textContent = 'Spiel starten'; btn.disabled = left <= 0;
+    const left = SPIEL.versuche > 0 ? SPIEL.versuche - gs.used : Infinity;
+    $('#tries').innerHTML = SPIEL.versuche > 0
+      ? Array.from({ length: SPIEL.versuche }, (_, i) => `<i class="${i < left ? 'on' : ''}"></i>`).join('') + `<span>${left > 0 ? left + (left === 1 ? ' Versuch' : ' Versuche') + ' übrig heute' : 'Morgen wieder'}</span>`
+      : '<span>Unbegrenzt viele Versuche · bis du 20 % gewinnst</span>';
+    btn.textContent = 'Spiel starten'; btn.disabled = SPIEL.versuche > 0 && left <= 0;
   }
   const overlay = (h) => { $('#res-in').innerHTML = h; $('#result').hidden = false; };
   const codeBox = () => `<div class="codebox"><span>${esc(code)}</span><button type="button" data-copy>Kopieren</button></div>`;
   function gameIdle() {
     triesUI();
     if (code) overlay(`<div class="big win">${SPIEL.prozent}&nbsp;% gesichert</div>${codeBox()}<div class="sub">${SPIEL.anKasse ? 'Wird im Warenkorb automatisch abgezogen' : 'Steht im Warenkorb, schick ihn mir nach der Bestellung'}</div><button class="btn line" type="button" data-start>Zum Spaß nochmal</button>`);
-    else if (gs.used >= SPIEL.versuche) overlay(`<div class="big lose">Für heute vorbei</div><div class="sub">Morgen gibt es ${SPIEL.versuche} neue Versuche</div>`);
+    else if (SPIEL.versuche > 0 && gs.used >= SPIEL.versuche) overlay(`<div class="big lose">Für heute vorbei</div><div class="sub">Morgen gibt es ${SPIEL.versuche} neue Versuche</div>`);
     else overlay(`<div class="big">Bereit?</div><div class="sub">Tipp, wenn das Etikett auf der Linie ist</div><button class="btn" type="button" data-start>Spiel starten</button>`);
   }
   function start() {
     if (fly) return;
     const practice = !!code;
-    if (!practice) { if (gs.used >= SPIEL.versuche) return; gs.used++; store.set('belo_spiel', gs); triesUI(); }
+    if (!practice) { if (SPIEL.versuche > 0 && gs.used >= SPIEL.versuche) return; gs.used++; store.set('belo_spiel', gs); triesUI(); }
     $('#result').hidden = true; frozen = null; parts = []; rings = []; size();
     zx = W * (0.3 + Math.random() * 0.4);
     const half = dims().w / 2, [a, b] = SPIEL.flugzeit;
@@ -705,12 +706,12 @@
     setTimeout(() => overlay(`<div class="big win">Treffer! −${SPIEL.prozent}&nbsp;%</div><div class="sub">Nur ${Math.round(dist)} px daneben</div>${f.practice ? '' : codeBox()}`), 750);
   }
   function miss(dist, f) {
-    const left = SPIEL.versuche - gs.used;
-    const tail = f.practice ? '' : left > 0 ? 'Noch ' + left + (left === 1 ? ' Versuch' : ' Versuche') + ' heute' : 'Morgen hast du neue Versuche';
+    const left = SPIEL.versuche > 0 ? SPIEL.versuche - gs.used : Infinity;
+    const tail = f.practice ? '' : SPIEL.versuche === 0 ? 'Du kannst es direkt nochmal versuchen.' : left > 0 ? 'Noch ' + left + (left === 1 ? ' Versuch' : ' Versuche') + ' heute' : 'Morgen hast du neue Versuche';
     const h = dist === null ? `<div class="big lose">Zu spät</div><div class="sub">Es ist durchgeflogen. ${tail}</div>`
       : dist < W * 0.06 ? `<div class="big near">So knapp!</div><div class="sub">${Math.round(dist)} px daneben. ${tail}</div>`
       : `<div class="big lose">Daneben</div><div class="sub">${Math.round(dist)} px daneben. ${tail}</div>`;
-    const again = f.practice || left > 0 ? `<button class="btn" type="button" data-start>${f.practice ? 'Nochmal' : 'Nächster Versuch'}</button>` : '';
+    const again = f.practice || SPIEL.versuche === 0 || left > 0 ? `<button class="btn" type="button" data-start>${f.practice ? 'Nochmal' : 'Nächster Versuch'}</button>` : '';
     setTimeout(() => overlay(h + again), dist === null ? 0 : 600);
     kick();
   }
