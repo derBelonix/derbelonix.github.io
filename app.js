@@ -9,7 +9,7 @@
     versuche: 5,           // maximal fünf Versuche pro Tag
     toleranz: 0.022,       // etwas breitere Trefferzone, damit es leichter ist
     flugzeit: [1.3, 1.3],   // konstante Geschwindigkeit: 1,3 Sekunden pro Querflug
-    anKasse: false         // true erst, wenn dein Apps Script den Code annimmt (siehe Anleitung)
+    anKasse: true          // Rabattcode wird beim Checkout mitgesendet
   };
   if (typeof SHOP === 'object' && SHOP.spiel) Object.assign(SPIEL, SHOP.spiel);
 
@@ -32,8 +32,18 @@
   // ---------- Rabattcode ----------
   let code = store.get('belo_code', null);
   const rate = SPIEL.prozent / 100;
-  const discounted = () => !!code && SPIEL.anKasse;
-  const priceHTML = (p) => discounted() ? `<s>${esc(euro(p))}</s>${esc(euro(p * (1 - rate)))}` : esc(euro(p));
+  const normalizedCode = (value) => String(value || '').trim().toUpperCase();
+  const couponPercent = (value) => {
+    const c = normalizedCode(value);
+    const configured = SHOP.gutscheine && SHOP.gutscheine[c];
+    if (configured && configured.aktiv !== false) return Number(configured.prozent) || 0;
+    if (/^BELO20-[A-Z0-9]{4}$/.test(c)) return 20;
+    return 0;
+  };
+  const activePercent = () => couponPercent(code);
+  const discounted = () => !!code && activePercent() > 0 && SPIEL.anKasse;
+  const currentRate = () => activePercent() / 100;
+  const priceHTML = (p) => discounted() ? `<s>${esc(euro(p))}</s>${esc(euro(p * (1 - currentRate())))}` : esc(euro(p));
 
   // ---------- Warenkorb (bleibt im Browser gespeichert) ----------
   const CART_KEY = 'belo_warenkorb';
@@ -312,7 +322,7 @@
   }
   function totals(items) {
     const sub = items.reduce((s, p) => s + Number(p.preis), 0);
-    const off = discounted() ? Math.round(sub * rate * 100) / 100 : 0;
+    const off = discounted() ? Math.round(sub * currentRate() * 100) / 100 : 0;
     return { sub, off, total: sub - off + SHIP };
   }
   function renderCart() {
@@ -327,17 +337,41 @@
       </div>`).join('');
     const t = totals(items);
     $('#sum').innerHTML = `<span>${items.length} Artikel</span><span>${euro(t.sub)}</span>
-      ${t.off ? `<span class="disc">Code ${esc(code)} (−${SPIEL.prozent}&nbsp;%)</span><span class="disc">−${euro(t.off)}</span>` : ''}
+      ${t.off ? `<span class="disc">Code ${esc(code)} (−${activePercent()}&nbsp;%)</span><span class="disc">−${euro(t.off)}</span>` : ''}
       <span>Versand <small>(nur einmal)</small></span><span>${euro(SHIP)}</span>
       <span class="tot">Gesamt</span><span class="tot">${euro(t.total)}</span>`;
     const ci = $('#codeinfo');
-    if (code && !SPIEL.anKasse) {
+    if (code && discounted()) {
       ci.hidden = false;
-      ci.innerHTML = `Dein Rabattcode <b>${esc(code)}</b>: Bezahl ganz normal und schick mir den Code danach${SHOP.instagram ? ' per Instagram (@' + esc(SHOP.instagram) + ')' : ''}${SHOP.email ? ' oder an ' + esc(SHOP.email) : ''}. Du bekommst ${SPIEL.prozent} % vom Warenwert (${euro(t.sub * rate)}) zurückerstattet.`;
+      ci.innerHTML = `✓ Gutschein <b>${esc(code)}</b> angewendet. Du sparst ${activePercent()} % auf den Warenwert.`;
     } else ci.hidden = true;
+    const couponInput = $('#coupon-input');
+    if (couponInput && document.activeElement !== couponInput) couponInput.value = code || '';
+    const couponStatus = $('#coupon-status');
+    if (couponStatus && code) {
+      couponStatus.className = 'coupon-status success';
+      couponStatus.textContent = 'Gutschein ' + code + ' ist ausgewählt.';
+    }
     const btn = $('#pay-btn'); btn.disabled = false; btn.textContent = 'Zahlungspflichtig bestellen · ' + euro(t.total);
     $('#demo-note').hidden = LIVE;
   }
+  $('#coupon-toggle').addEventListener('click', () => {
+    const button = $('#coupon-toggle'), form = $('#coupon-form');
+    const expanded = button.getAttribute('aria-expanded') === 'true';
+    button.setAttribute('aria-expanded', String(!expanded)); form.hidden = expanded;
+    if (!expanded) $('#coupon-input').focus();
+  });
+  function applyCoupon() {
+    const input = $('#coupon-input'), status = $('#coupon-status');
+    const candidate = normalizedCode(input.value), pct = couponPercent(candidate);
+    if (!candidate) { status.className = 'coupon-status error'; status.textContent = 'Bitte gib einen Gutscheincode ein.'; return; }
+    if (!pct) { status.className = 'coupon-status error'; status.textContent = 'Dieser Gutscheincode ist nicht bekannt oder nicht aktiv.'; return; }
+    code = candidate; store.set('belo_code', code);
+    status.className = 'coupon-status success'; status.textContent = 'Gutschein ausgewählt: ' + pct + ' % Rabatt.';
+    ticker(); render(); renderCart(); toast(pct + ' % Rabattcode ausgewählt');
+  }
+  $('#coupon-apply').addEventListener('click', applyCoupon);
+  $('#coupon-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } });
   $('#cartlist').addEventListener('click', (e) => {
     const rm = e.target.closest('[data-rm]');
     if (rm) { const p = byId(rm.dataset.rm); removeFromCart([rm.dataset.rm]); renderCart(); if (p) toast('„' + p.titel + '“ entfernt'); return; }
