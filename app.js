@@ -79,8 +79,9 @@
   $('#ship-text').textContent = SHOP.versand;
   function ticker() {
     const marks = (SHOP.marken && SHOP.marken.length ? SHOP.marken : ['Vintage', 'Streetwear']);
-    const extra = code ? 'Dein Code ' + code + ' ist aktiv' : SPIEL.prozent + ' % Rabatt im Spiel holen';
-    const one = '<span>' + marks.map((m) => esc(m) + '<b>✳</b>').join('') + 'Einzelstücke<b>✳</b>' + esc(extra) + '<b>✳</b></span>';
+    const extra = code ? 'Code ' + code + ' aktiv' : '−' + SPIEL.prozent + ' % im Spiel holen';
+    const one = marks.map((m, i) => `<span class="m${i % 2 ? ' o' : ''}">${esc(m)}</span><span class="spark"></span>`).join('') +
+      `<span class="note">${esc(extra)}</span><span class="spark"></span>`;
     $('#ticker').innerHTML = one + one + one + one;
   }
   ticker();
@@ -148,6 +149,7 @@
   function render() {
     const free = PRODUKTE.filter((p) => !isSold(p)).length;
     $('#live-n').textContent = free;
+    $('#drops-n').textContent = free;
     const list = PRODUKTE.map((p, i) => ({ p, i }))
       .filter(({ p }) => (st.cat === 'Alle' || p.kategorie === st.cat) && (!st.size || p.groesse === st.size) && (!st.avail || !isSold(p)))
       .sort((a, b) => {
@@ -157,7 +159,7 @@
         return (b.p.neu === true) - (a.p.neu === true) || a.i - b.i;
       });
     $('#count').textContent = list.length + (list.length === 1 ? ' Teil' : ' Teile') + ' · ' + free + ' verfügbar';
-    $('#grid').innerHTML = list.length ? list.map(({ p }) => {
+    $('#grid').innerHTML = list.length ? list.map(({ p, i }) => {
       const sold = isSold(p);
       return `<button class="card${sold ? ' sold' : ''}" type="button" data-id="${esc(p.id)}" aria-label="${esc(p.titel)}, ${esc(euro(p.preis))}${sold ? ', verkauft' : ''}">
         <span class="media">
@@ -167,11 +169,22 @@
           <span class="size">${esc(p.groesse)}</span>
           <span class="sticker">${sold ? esc(euro(p.preis)) : priceHTML(p.preis)}</span>
         </span>
-        <span class="meta"><span class="b">${esc(p.marke)}</span><span class="t">${esc(p.titel)}</span></span>
+        <span class="meta"><span class="b">${esc(p.marke)}<span class="no">Nº ${String(i + 1).padStart(3, '0')}</span></span><span class="t">${esc(p.titel)}</span></span>
       </button>`;
     }).join('') : '<p class="empty">Gerade nichts in dieser Auswahl. Schau bald wieder rein.</p>';
   }
   $('#grid').addEventListener('click', (e) => { const b = e.target.closest('.card'); if (b) openItem(b.dataset.id, b); });
+  // leichtes 3D-Kippen der Karten mit der Maus
+  if (window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches) {
+    $('#grid').addEventListener('pointermove', (e) => {
+      const m = e.target.closest('.media'); if (!m) return;
+      const r = m.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      m.style.setProperty('--ry', (x * 8).toFixed(2) + 'deg'); m.style.setProperty('--rx', (-y * 8).toFixed(2) + 'deg');
+    });
+    $('#grid').addEventListener('pointerout', (e) => {
+      const m = e.target.closest('.media'); if (m && !m.contains(e.relatedTarget)) { m.style.setProperty('--ry', '0deg'); m.style.setProperty('--rx', '0deg'); }
+    });
+  }
 
   // ---------- Verkaufsstatus vom Bestellsystem holen ----------
   async function syncSold() {
