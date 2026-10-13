@@ -6,7 +6,7 @@
   /* ===== RABATT-SPIEL – Einstellungen ===== */
   const SPIEL = {
     prozent: 20,           // Rabatt in Prozent
-    versuche: 5,           // maximal fünf Versuche pro Tag
+    versuche: 3,           // maximal drei Versuche pro Tag
     toleranz: 0.022,       // etwas breitere Trefferzone, damit es leichter ist
     flugzeit: [1.3, 1.3],   // konstante Geschwindigkeit: 1,3 Sekunden pro Querflug
     anKasse: true          // Rabattcode wird beim Checkout mitgesendet
