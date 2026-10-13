@@ -6,9 +6,9 @@
   /* ===== RABATT-SPIEL – Einstellungen ===== */
   const SPIEL = {
     prozent: 20,           // Rabatt in Prozent
-    versuche: 0,           // 0 = unbegrenzt spielen, bis ein Treffer gelingt
-    toleranz: 0.014,       // Trefferbreite als Anteil des Spielfelds (kleiner = schwerer)
-    flugzeit: [0.95, 1.25],// Sekunden für einmal quer (kleiner = schneller)
+    versuche: 5,           // maximal fünf Versuche pro Tag
+    toleranz: 0.022,       // etwas breitere Trefferzone, damit es leichter ist
+    flugzeit: [1.3, 1.3],   // konstante Geschwindigkeit: 1,3 Sekunden pro Querflug
     anKasse: false         // true erst, wenn dein Apps Script den Code annimmt (siehe Anleitung)
   };
   if (typeof SHOP === 'object' && SHOP.spiel) Object.assign(SPIEL, SHOP.spiel);
@@ -684,7 +684,7 @@
     $('#result').hidden = true; frozen = null; parts = []; rings = []; size();
     zx = W * (0.3 + Math.random() * 0.4);
     const half = dims().w / 2, [a, b] = SPIEL.flugzeit;
-    const base = a + Math.random() * (b - a) - (practice ? 0 : (gs.used - 1) * 0.07);
+    const base = a; // bleibt bei jedem Versuch gleich schnell
     fly = { t0: performance.now() + 1200, dur: base * 1000, from: -half - 40, to: W + half + 40,
       a: 0.35 + Math.random() * 0.3, k: 1 + Math.floor(Math.random() * 2), ph: Math.random() * 6.28,
       wv: 1 + Math.random() * 2, ph2: Math.random() * 6.28, spin: (Math.random() < 0.5 ? -1 : 1) * (1.2 + Math.random()), practice };
