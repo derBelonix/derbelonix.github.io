@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#f0eadf"/>
+  <path d="M28 17h72v94H28z" fill="#171511" stroke="#171511" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M28 17h72v94H28z" fill="none" stroke="#e8dfce" stroke-width="2" stroke-dasharray="4 5"/>
+  <circle cx="64" cy="30" r="5.5" fill="#f0eadf" stroke="#f0eadf" stroke-width="2"/>
+  <text x="64" y="62" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="17" font-weight="900" letter-spacing="-1" fill="#f0eadf">BELO</text>
+  <path d="M43 69h42" stroke="#f0eadf" stroke-width="1.5"/>
+  <text x="64" y="84" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="9" font-weight="700" letter-spacing="1.1" fill="#f0eadf">VINTAGE</text>
+  <path d="M45 94h38" stroke="#d9b65d" stroke-width="4" stroke-linecap="round"/>
+</svg>
