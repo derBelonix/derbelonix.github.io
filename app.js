@@ -75,8 +75,12 @@
   document.title = SHOP.name + ' – Vintage & Streetwear';
   ['#logo', '#hero-name', '#foot-name'].forEach((s) => ($(s).textContent = SHOP.name));
   $('#hero-slogan').textContent = SHOP.slogan;
-  $('#pay-text').textContent = SHOP.bezahlung;
   $('#ship-text').textContent = SHOP.versand;
+  $('#ship-cost').textContent = euro(SHIP) + ' pro Bestellung, egal wie viele Teile';
+  const chips = ['Karte', 'Apple Pay', 'Google Pay', 'Klarna', 'Lastschrift'].map((x) => `<span>${x}</span>`).join('');
+  $('#pay-chips').innerHTML = chips; $('#cart-chips').innerHTML = chips;
+  if (SHOP.instagram) $('#ask-link').innerHTML = `<a href="https://instagram.com/${esc(SHOP.instagram)}" target="_blank" rel="noopener">Instagram @${esc(SHOP.instagram)}</a>`;
+  else if (SHOP.email) $('#ask-link').textContent = SHOP.email;
   function ticker() {
     const marks = (SHOP.marken && SHOP.marken.length ? SHOP.marken : ['Vintage', 'Streetwear']);
     const extra = code ? 'Code ' + code + ' aktiv' : '−' + SPIEL.prozent + ' % im Spiel holen';
@@ -187,11 +191,21 @@
   }
 
   // ---------- Verkaufsstatus vom Bestellsystem holen ----------
+  // Besucher-ID nur für diesen Tab (keine persönlichen Daten), damit dein Script live mitzählen kann
+  let sid = '';
+  try { sid = sessionStorage.getItem('belo_sid') || ''; if (!sid) { sid = Math.random().toString(36).slice(2, 12); sessionStorage.setItem('belo_sid', sid); } } catch (e) { sid = Math.random().toString(36).slice(2, 12); }
+  function showLive(n) {
+    const ok = typeof n === 'number' && n >= 1;
+    $('#lv').hidden = !ok; $('#lv-sep').hidden = !ok;
+    if (ok) $('#live-v').textContent = n;
+  }
   async function syncSold() {
     if (DEMO) return;
     try {
-      const r = await fetch(SHOP.bestellURL + (SHOP.bestellURL.includes('?') ? '&' : '?') + 't=' + Date.now());
+      const live = document.visibilityState === 'visible' ? '&live=' + encodeURIComponent(sid) : '';
+      const r = await fetch(SHOP.bestellURL + (SHOP.bestellURL.includes('?') ? '&' : '?') + 't=' + Date.now() + live);
       const d = await r.json();
+      if (d && 'live' in d) showLive(d.live);
       if (d && d.sold) {
         soldRemote.clear(); d.sold.forEach((id) => soldRemote.add(String(id))); render(); leine();
         const gone = pruneCart();
@@ -312,7 +326,7 @@
       </div>`).join('');
     const t = totals(items);
     $('#sum').innerHTML = `<span>${items.length} Artikel</span><span>${euro(t.sub)}</span>
-      ${t.off ? `<span class="disc">Code ${esc(code)} (−${SPIEL.prozent} %)</span><span class="disc">−${euro(t.off)}</span>` : ''}
+      ${t.off ? `<span class="disc">Code ${esc(code)} (−${SPIEL.prozent}&nbsp;%)</span><span class="disc">−${euro(t.off)}</span>` : ''}
       <span>Versand <small>(nur einmal)</small></span><span>${euro(SHIP)}</span>
       <span class="tot">Gesamt</span><span class="tot">${euro(t.total)}</span>`;
     const ci = $('#codeinfo');
@@ -442,7 +456,7 @@
   if (gs.day !== today) gs = { day: today, used: 0 };
   const stage = $('#stage'), cv = $('#gcv'), cx = cv.getContext('2d');
   let W = 0, H = 0, fly = null, parts = [], rings = [], zx = 0, tol = 6, frozen = null, anim = 0, visible = false;
-  const INK = '#2B2925';
+  const INK = '#14120F';
   function size() {
     const r = stage.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1);
     W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cx.setTransform(d, 0, 0, d, 0, 0);
@@ -480,7 +494,7 @@
     const ex = -w / 2 + h * 0.36, R = h * 0.13, mg = cx.createLinearGradient(ex - R, -R, ex + R, R);
     mg.addColorStop(0, '#F6E4A8'); mg.addColorStop(0.5, '#B48635'); mg.addColorStop(1, '#FBEDC2');
     cx.fillStyle = mg; cx.beginPath(); cx.arc(ex, 0, R, 0, 7); cx.fill(); cx.lineWidth = 1; cx.strokeStyle = 'rgba(43,41,37,.5)'; cx.stroke();
-    cx.fillStyle = '#EFECE6'; cx.beginPath(); cx.arc(ex, 0, R * 0.5, 0, 7); cx.fill();
+    cx.fillStyle = '#ECE8E1'; cx.beginPath(); cx.arc(ex, 0, R * 0.5, 0, 7); cx.fill();
     // Schrift
     cx.fillStyle = INK; cx.textAlign = 'center'; cx.textBaseline = 'middle';
     const tx = w * 0.1;
@@ -528,10 +542,14 @@
     cx.fillStyle = zg; cx.fillRect(zx - tol, 0, tol * 2, H);
     cx.fillStyle = INK; cx.fillRect(zx - 1, 0, 2, H);
     cx.font = "12px 'JetBrains Mono',monospace"; cx.textAlign = 'center'; cx.textBaseline = 'alphabetic'; cx.fillText('HIER STOPPEN', zx, 16);
-    cx.textAlign = 'left'; cx.fillStyle = '#6F6A63'; cx.fillText(fly ? 'TIPPEN · KLICKEN · LEERTASTE' : 'RABATT-SPIEL', 12, H - 12);
-    if (fly) {
+    cx.textAlign = 'left'; cx.fillStyle = '#6F6A63'; cx.fillText(fly ? (W < 520 ? 'JETZT TIPPEN' : 'TIPPEN · KLICKEN · LEERTASTE') : 'RABATT-SPIEL', 12, H - 12);
+    if (fly && now < fly.t0) {
+      const n = Math.ceil((fly.t0 - now) / 400), f = 1 - (((fly.t0 - now) % 400) / 400);
+      cx.save(); cx.globalAlpha = 1 - f * 0.6; cx.fillStyle = INK; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+      cx.font = `900 ${Math.round(Math.min(W, H) * (0.42 + f * 0.12))}px 'Archivo','Arial Narrow',sans-serif`; cx.fillText(String(n), W / 2, H / 2); cx.restore();
+    } else if (fly) {
       const pts = []; for (let i = 0; i <= 12; i++) { const q = posAt(fly, Math.max(fly.t0, now - i * 14)); pts.push(eye(q)); }
-      for (let i = 5; i >= 1; i--) { const q = posAt(fly, now - i * 18); if (q.p >= 0) tag(q.x, q.y, q.rot, q.flip, 0.06 + 0.04 * (5 - i), false); }
+      for (let i = W < 520 ? 3 : 5; i >= 1; i--) { const q = posAt(fly, now - i * 18); if (q.p >= 0) tag(q.x, q.y, q.rot, q.flip, 0.06 + 0.04 * (5 - i), false); }
       rope(pts);
       const s = posAt(fly, now); tag(s.x, s.y, s.rot, s.flip, 1, true);
     } else if (frozen) {
@@ -544,7 +562,7 @@
       rope([{ x: 0, y: q.y - 30 }, { x: e.x * 0.5, y: q.y + 14 }, e]);
       tag(q.x, q.y, q.rot, q.flip, 1, true);
     }
-    rings.forEach((r) => { cx.globalAlpha = Math.max(0, r.l); cx.lineWidth = 3; cx.strokeStyle = `hsl(${(r.r * 3) % 360},85%,70%)`; cx.beginPath(); cx.arc(r.x, r.y, r.r, 0, 7); cx.stroke(); });
+    rings.forEach((r) => { if (r.r <= 0) return; cx.globalAlpha = Math.max(0, r.l); cx.lineWidth = 3; cx.strokeStyle = `hsl(${(r.r * 3) % 360},85%,70%)`; cx.beginPath(); cx.arc(r.x, r.y, r.r, 0, 7); cx.stroke(); });
     parts.forEach((q) => { cx.globalAlpha = Math.max(0, q.l); cx.fillStyle = q.c; if (q.star) star(q.x, q.y, q.s); else cx.fillRect(q.x, q.y, q.s, q.s * 0.6); });
     cx.globalAlpha = 1;
   }
@@ -585,9 +603,9 @@
   const codeBox = () => `<div class="codebox"><span>${esc(code)}</span><button type="button" data-copy>Kopieren</button></div>`;
   function gameIdle() {
     triesUI();
-    if (code) overlay(`<div class="big win">${SPIEL.prozent} % gesichert</div>${codeBox()}<div class="sub">${SPIEL.anKasse ? 'Wird im Warenkorb automatisch abgezogen' : 'Steht im Warenkorb, schick ihn mir nach der Bestellung'}</div>`);
+    if (code) overlay(`<div class="big win">${SPIEL.prozent}&nbsp;% gesichert</div>${codeBox()}<div class="sub">${SPIEL.anKasse ? 'Wird im Warenkorb automatisch abgezogen' : 'Steht im Warenkorb, schick ihn mir nach der Bestellung'}</div><button class="btn line" type="button" data-start>Zum Spaß nochmal</button>`);
     else if (gs.used >= SPIEL.versuche) overlay(`<div class="big lose">Für heute vorbei</div><div class="sub">Morgen gibt es ${SPIEL.versuche} neue Versuche</div>`);
-    else overlay(`<div class="big">Bereit?</div><div class="sub">Starten, dann tippen, wenn das Etikett auf der Linie ist</div>`);
+    else overlay(`<div class="big">Bereit?</div><div class="sub">Tipp, wenn das Etikett auf der Linie ist</div><button class="btn" type="button" data-start>Spiel starten</button>`);
   }
   function start() {
     if (fly) return;
@@ -597,9 +615,11 @@
     zx = W * (0.3 + Math.random() * 0.4);
     const half = dims().w / 2, [a, b] = SPIEL.flugzeit;
     const base = a + Math.random() * (b - a) - (practice ? 0 : (gs.used - 1) * 0.07);
-    fly = { t0: performance.now() + 350, dur: base * 1000, from: -half - 40, to: W + half + 40,
+    fly = { t0: performance.now() + 1200, dur: base * 1000, from: -half - 40, to: W + half + 40,
       a: 0.35 + Math.random() * 0.3, k: 1 + Math.floor(Math.random() * 2), ph: Math.random() * 6.28,
       wv: 1 + Math.random() * 2, ph2: Math.random() * 6.28, spin: (Math.random() < 0.5 ? -1 : 1) * (1.2 + Math.random()), practice };
+    const r = stage.getBoundingClientRect();
+    if (r.top < 70 || r.bottom > window.innerHeight) stage.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
     stage.focus({ preventScroll: true }); kick();
   }
   function stop(t) {
@@ -613,7 +633,7 @@
       code = 'BELO' + SPIEL.prozent + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
       store.set('belo_code', code); ticker(); render(); triesUI();
     }
-    setTimeout(() => overlay(`<div class="big win">Treffer! −${SPIEL.prozent} %</div><div class="sub">Nur ${Math.round(dist)} px daneben</div>${f.practice ? '' : codeBox()}`), 750);
+    setTimeout(() => overlay(`<div class="big win">Treffer! −${SPIEL.prozent}&nbsp;%</div><div class="sub">Nur ${Math.round(dist)} px daneben</div>${f.practice ? '' : codeBox()}`), 750);
   }
   function miss(dist, f) {
     const left = SPIEL.versuche - gs.used;
@@ -621,11 +641,13 @@
     const h = dist === null ? `<div class="big lose">Zu spät</div><div class="sub">Es ist durchgeflogen. ${tail}</div>`
       : dist < W * 0.06 ? `<div class="big near">So knapp!</div><div class="sub">${Math.round(dist)} px daneben. ${tail}</div>`
       : `<div class="big lose">Daneben</div><div class="sub">${Math.round(dist)} px daneben. ${tail}</div>`;
-    setTimeout(() => overlay(h), dist === null ? 0 : 600);
+    const again = f.practice || left > 0 ? `<button class="btn" type="button" data-start>${f.practice ? 'Nochmal' : 'Nächster Versuch'}</button>` : '';
+    setTimeout(() => overlay(h + again), dist === null ? 0 : 600);
     kick();
   }
   stage.addEventListener('pointerdown', (e) => {
     if (e.target.closest('[data-copy]')) { copy(code); return; }
+    if (e.target.closest('[data-start]')) { e.preventDefault(); start(); return; }
     if (fly) { e.preventDefault(); stop(e.timeStamp || performance.now()); }
   });
   stage.addEventListener('keydown', (e) => { if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); fly ? stop(performance.now()) : start(); } });
@@ -648,5 +670,6 @@
     if (h === 'warenkorb') openCart(false);
     else if (h && PRODUKTE.some((p) => p.id === h)) openItem(h);
   });
-  setInterval(syncSold, 60000);
+  setInterval(syncSold, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSold(); });
 })();
