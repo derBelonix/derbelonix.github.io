@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vintage Shop</title>
+<meta name="description" content="Handverlesene Vintage- und Streetwear-Teile. Jedes Teil gibt es nur einmal.">
+<meta name="theme-color" content="#14120F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500;62..125,700;62..125,900&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="drops">
+  <a class="drops-live" href="#shop"><i aria-hidden="true"></i><span class="lv" id="lv" hidden><b id="live-v">0</b> im Shop</span><span class="lv-sep" id="lv-sep" hidden></span><span><b id="drops-n">0</b> <span class="hide-s">Teile</span> verfügbar</span></a>
+  <div class="drops-run" aria-hidden="true"><div class="track" id="ticker"></div></div>
+</div>
+
+<header class="bar">
+  <a class="logo" href="#" aria-label="Zur Startseite"><span class="hole" aria-hidden="true"></span><span id="logo">VINTAGE</span></a>
+  <nav class="links">
+    <a href="#shop">Shop</a>
+    <a href="#spiel">−20 % Spiel</a>
+    <a href="#info">Infos</a>
+    <a href="#kontakt">Kontakt</a>
+  </nav>
+  <div class="bar-r">
+    <span class="live" id="live"><i></i><span id="live-n">0</span> verfügbar</span>
+    <button class="cartbtn" id="cart-btn" type="button" aria-label="Warenkorb öffnen, 0 Teile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <span class="lbl">Warenkorb</span><span class="cnt" id="cart-n">0</span>
+    </button>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-txt">
+    <p class="kicker mono">Vintage &amp; Streetwear · Einzelstücke</p>
+    <h1 id="hero-name">VINTAGE</h1>
+    <p class="slogan" id="hero-slogan"></p>
+    <div class="hero-cta">
+      <a class="btn" href="#shop">Zum Drop <span aria-hidden="true">↓</span></a>
+      <a class="btn line" href="#spiel" id="hero-game">20 % erspielen</a>
+      <div class="seal" aria-hidden="true">
+        <svg viewBox="0 0 120 120"><defs><path id="sealp" d="M60 60 m-45 0 a45 45 0 1 1 90 0 a45 45 0 1 1 -90 0"/></defs><text><textPath href="#sealp" textLength="282">ECHT · GEPRÜFT · GEMESSEN · EINZELSTÜCK ·</textPath></text></svg>
+        <span class="seal-c">✓</span>
+      </div>
+    </div>
+  </div>
+  <div class="leine" id="leine" aria-label="Neue Teile"></div>
+</section>
+
+<main id="shop" class="wrap">
+  <div class="shop-h">
+    <h2>Der Drop</h2>
+    <span class="mono muted" id="count"></span>
+  </div>
+  <div class="filterbar" id="filterbar">
+    <div class="seg" id="cats" role="group" aria-label="Kategorie"></div>
+    <div class="fright">
+      <label class="field"><span>Größe</span><select id="f-size"><option value="">Alle</option></select></label>
+      <label class="field"><span>Sortierung</span>
+        <select id="f-sort">
+          <option value="neu">Neu zuerst</option>
+          <option value="preis-auf">Preis ↑</option>
+          <option value="preis-ab">Preis ↓</option>
+        </select></label>
+      <label class="switch"><input type="checkbox" id="f-avail"><span class="knob" aria-hidden="true"></span>Nur verfügbar</label>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<section class="game" id="spiel">
+  <div class="game-in">
+    <div class="game-txt">
+      <p class="mono kicker">Rabatt-Spiel</p>
+      <h2>Schnapp dir das Etikett. Spar <span class="hl">20&nbsp;%</span>.</h2>
+      <p>Ein Holo-Preisetikett wirbelt durchs Bild, mal schnell, mal langsam. Tipp genau dann, wenn es auf der Linie ist. Triffst du, gilt der Rabatt für deine ganze Bestellung.</p>
+      <div class="tries" id="tries"></div>
+      <button class="btn" type="button" id="play-btn">Spiel starten</button>
+    </div>
+    <div class="stage" id="stage" tabindex="0" aria-label="Spielfeld. Tippen, Klicken oder Leertaste stoppt das Etikett.">
+      <canvas id="gcv"></canvas>
+      <div class="result" id="result"><div class="res-in" id="res-in"></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="info" class="wrap"><div class="service">
+  <div class="svc">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>
+    <div><h3>Versand</h3><p id="ship-text"></p><p class="svc-sub" id="ship-cost"></p></div>
+  </div>
+  <div class="svc">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg>
+    <div><h3>Bezahlung</h3><div class="pay" id="pay-chips"></div><p class="svc-sub">Abgewickelt über Stripe</p></div>
+  </div>
+  <div class="svc">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.3-5.6"/><path d="M4 4v4h4"/></svg>
+    <div><h3>Rückgabe</h3><p>Es gilt das gesetzliche Widerrufsrecht.</p><p class="svc-sub"><a href="widerruf.html">Widerruf &amp; Versandinfos</a></p></div>
+  </div>
+  <div class="svc">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>
+    <div><h3>Fragen zu einem Teil?</h3><p id="ask-text">Schreib mir einfach, ich schicke dir gern mehr Fotos oder Maße.</p><p class="svc-sub" id="ask-link"></p></div>
+  </div>
+</div></section>
+
+<footer id="kontakt" class="foot">
+  <div class="wrap foot-in">
+    <div>
+      <div class="foot-name" id="foot-name">VINTAGE</div>
+      <div class="contact" id="contact"></div>
+    </div>
+    <nav class="legal"><a href="impressum.html">Impressum</a><a href="datenschutz.html">Datenschutz</a><a href="widerruf.html">Widerruf &amp; Versand</a></nav>
+  </div>
+</footer>
+
+<!-- Produkt + Checkout (Seitenpanel / Bottom-Sheet) -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-title" hidden>
+  <div class="d-head">
+    <button class="icon-btn" id="d-back" type="button" aria-label="Zurück" hidden>←</button>
+    <span class="mono d-step" id="d-step">Artikel</span>
+    <button class="icon-btn" id="d-close" type="button" aria-label="Schließen">✕</button>
+  </div>
+
+  <section class="d-body" id="step-item">
+    <div class="gal">
+      <button class="cardbtn" id="card-btn" type="button"><span class="cb-holo" aria-hidden="true"></span>Holo-Karte</button>
+      <div class="carousel" id="carousel"></div>
+      <button class="gnav prev" id="g-prev" type="button" aria-label="Vorheriges Foto">‹</button>
+      <button class="gnav next" id="g-next" type="button" aria-label="Nächstes Foto">›</button>
+      <span class="gcount mono" id="g-count"></span>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+    <p class="mono d-brand" id="d-brand"></p>
+    <h2 id="d-title"></h2>
+    <p class="d-price" id="d-price"></p>
+    <dl class="specs" id="d-specs"></dl>
+    <p class="d-desc" id="d-desc"></p>
+    <div class="d-actions" id="d-actions"></div>
+  </section>
+
+  <section class="d-body" id="step-checkout" hidden>
+    <h2 class="cart-h">Dein Warenkorb</h2>
+    <div class="cartlist" id="cartlist"></div>
+    <div class="cart-empty" id="cart-empty" hidden>
+      <p>Dein Warenkorb ist leer.</p>
+      <button class="buy ghost" type="button" id="cart-shop">Zum Shop</button>
+    </div>
+    <div id="cart-pay">
+      <p class="cart-note mono">Jedes Teil gibt es nur einmal. Reserviert ist es erst nach der Zahlung.</p>
+      <div class="sum" id="sum"></div>
+      <div class="codeinfo" id="codeinfo" hidden></div>
+      <div class="pay cart-pay-chips" id="cart-chips"></div>
+      <p class="cart-addr">Lieferadresse und Zahlung gibst du auf der nächsten Seite ein.</p>
+      <label class="agree"><input type="checkbox" id="c-agree"><span>Ich habe die <a href="widerruf.html" target="_blank">Widerrufsbelehrung</a> und die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen.</span></label>
+      <p class="err" id="c-err" role="alert"></p>
+      <button class="buy" type="button" id="pay-btn">Zahlungspflichtig bestellen</button>
+      <p class="demo-note" id="demo-note" hidden>Demo-Modus: Bezahlsystem noch nicht verbunden. Es wird nichts abgebucht.</p>
+    </div>
+  </section>
+
+  <section class="d-body done" id="step-done" hidden>
+    <div class="check-big" aria-hidden="true">✓</div>
+    <h2>Danke für deine Bestellung!</h2>
+    <p id="done-text"></p>
+    <div class="ordercard" id="done-card"></div>
+    <button class="buy ghost" type="button" id="done-close">Weiter stöbern</button>
+  </section>
+</aside>
+
+<!-- Holo-Sammelkarte -->
+<div class="tc-wrap" id="tc-wrap" hidden role="dialog" aria-modal="true" aria-label="Holo-Sammelkarte">
+  <div class="tc-top"><span class="mono">Sammelkarte</span><button class="icon-btn" id="tc-close" type="button" aria-label="Schließen">✕</button></div>
+  <div class="tc-stage" id="tc-stage">
+    <div class="tc" id="tc">
+      <div class="tc-face tc-front" id="tc-front"></div>
+      <div class="tc-face tc-back" id="tc-back"></div>
+    </div>
+  </div>
+  <p class="tc-hint mono" id="tc-hint">Bewegen zum Glänzen · Tippen zum Umdrehen</p>
+  <button class="btn line tc-gyro" id="tc-gyro" type="button" hidden>Handy-Neigung aktivieren</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="produkte.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

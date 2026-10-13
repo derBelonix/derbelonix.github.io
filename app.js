@@ -244,6 +244,7 @@
     const specs = { 'Größe': p.groesse, 'Zustand': p.zustand, ...(p.masse || {}) };
     $('#d-specs').innerHTML = Object.entries(specs).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
     $('#d-desc').textContent = p.beschreibung || '';
+    $('#card-btn').hidden = false;
     renderActions(p);
     step('item'); openDrawer();
     $('#d-close').focus();
@@ -447,6 +448,74 @@
     (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
       .then(() => toast('Code kopiert')).catch(() => toast('Dein Code: ' + text));
   }
+
+
+  /* ==========================================================
+     HOLO-SAMMELKARTE: jedes Teil als holografische Karte
+     ========================================================== */
+  let tcP = null, tcFlip = 0, gyroOn = false;
+  const tc = $('#tc'), tcWrap = $('#tc-wrap');
+  function cardNo(p) { return 'Nº ' + String(PRODUKTE.indexOf(p) + 1).padStart(3, '0'); }
+  function shortZustand(z) { z = String(z || ''); const m = z.match(/\d+\s*\/\s*10/); if (m) return m[0].replace(/\s/g, ''); if (/neu/i.test(z)) return 'Neu'; return z.split(/[\s–-]/)[0]; }
+  function openCard(p) {
+    tcP = p; tcFlip = 0; tc.style.setProperty('--flip', '0deg'); tilt(0, 0);
+    const layers = '<span class="tc-holo"></span><span class="tc-glare"></span>';
+    $('#tc-front').innerHTML = `<div class="tc-in">
+        <div class="tc-head"><span>${esc(p.marke)}</span><span>${cardNo(p)}</span></div>
+        <div class="tc-pic"><img src="${esc(p.bilder[0])}" alt="${esc(p.titel)}"><div class="tc-one">1/1<small>EINZEL</small></div></div>
+        <div class="tc-name">${esc(p.titel)}</div>
+        <div class="tc-stats"><div><small>Größe</small><b>${esc(p.groesse)}</b></div><div><small>Zustand</small><b>${esc(shortZustand(p.zustand))}</b></div><div><small>Preis</small><b>${esc(euro(p.preis))}</b></div></div>
+      </div>${layers}`;
+    const specs = { 'Größe': p.groesse, 'Zustand': p.zustand, ...(p.masse || {}) };
+    $('#tc-back').innerHTML = `<div class="tc-in">
+        <h4>${esc(SHOP.name)} · Datenblatt</h4>
+        <dl>${Object.entries(specs).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+        <div class="tc-big">${cardNo(p)}<br>1 von 1</div>
+        <div class="tc-foot">${esc(p.marke)} · ${esc(p.kategorie)}${isSold(p) ? ' · Verkauft' : ''}</div>
+      </div>${layers}`;
+    tcWrap.hidden = false;
+    $('#tc-gyro').hidden = !(window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') || gyroOn;
+    if (!reduceMotion && window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') startGyro();
+    $('#tc-close').focus();
+  }
+  function closeCard() { tcWrap.hidden = true; }
+  // x, y von -1 bis 1
+  function tilt(x, y) {
+    x = Math.max(-1, Math.min(1, x)); y = Math.max(-1, Math.min(1, y));
+    tc.style.setProperty('--ry', (x * 16).toFixed(2) + 'deg'); tc.style.setProperty('--rx', (-y * 14).toFixed(2) + 'deg');
+    tc.style.setProperty('--px', (50 + x * 45).toFixed(1) + '%'); tc.style.setProperty('--py', (50 + y * 45).toFixed(1) + '%');
+    tc.style.setProperty('--gx', (50 + x * 50).toFixed(1) + '%'); tc.style.setProperty('--gy', (35 + y * 50).toFixed(1) + '%');
+  }
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let downAt = null;
+  $('#tc-stage').addEventListener('pointermove', (e) => {
+    if (gyroOn && e.pointerType === 'touch') return;
+    const r = $('#tc-stage').getBoundingClientRect();
+    tilt(((e.clientX - r.left) / r.width) * 2 - 1, ((e.clientY - r.top) / r.height) * 2 - 1);
+  });
+  $('#tc-stage').addEventListener('pointerleave', () => { if (!gyroOn) tilt(0, 0); });
+  $('#tc-stage').addEventListener('pointerdown', (e) => { downAt = { x: e.clientX, y: e.clientY }; });
+  $('#tc-stage').addEventListener('pointerup', (e) => {
+    if (downAt && Math.abs(e.clientX - downAt.x) + Math.abs(e.clientY - downAt.y) < 12) {
+      tcFlip += 180; tc.classList.add('flipping'); tc.style.setProperty('--flip', tcFlip + 'deg');
+      setTimeout(() => tc.classList.remove('flipping'), 700);
+    }
+    downAt = null;
+  });
+  let base = null;
+  function onOrient(e) {
+    if (tcWrap.hidden || e.gamma == null) return;
+    if (!base) base = { b: e.beta, g: e.gamma };
+    tilt((e.gamma - base.g) / 25, (e.beta - base.b) / 25);
+  }
+  function startGyro() { if (gyroOn) return; gyroOn = true; base = null; window.addEventListener('deviceorientation', onOrient); }
+  $('#tc-gyro').addEventListener('click', async () => {
+    try { const r = await DeviceOrientationEvent.requestPermission(); if (r === 'granted') { startGyro(); $('#tc-gyro').hidden = true; } else toast('Ohne Sensor: einfach mit dem Finger über die Karte wischen.'); }
+    catch (err) { toast('Ohne Sensor: einfach mit dem Finger über die Karte wischen.'); }
+  });
+  $('#card-btn').addEventListener('click', () => { if (cur) openCard(cur); });
+  $('#tc-close').addEventListener('click', closeCard);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !tcWrap.hidden) { e.stopImmediatePropagation(); closeCard(); } }, true);
 
   /* ==========================================================
      RABATT-SPIEL: das Holo-Preisetikett anhalten
