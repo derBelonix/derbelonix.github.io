@@ -361,14 +361,24 @@
     button.setAttribute('aria-expanded', String(!expanded)); form.hidden = expanded;
     if (!expanded) $('#coupon-input').focus();
   });
-  function applyCoupon() {
+  async function applyCoupon() {
     const input = $('#coupon-input'), status = $('#coupon-status');
-    const candidate = normalizedCode(input.value), pct = couponPercent(candidate);
+    const candidate = normalizedCode(input.value);
     if (!candidate) { status.className = 'coupon-status error'; status.textContent = 'Bitte gib einen Gutscheincode ein.'; return; }
-    if (!pct) { status.className = 'coupon-status error'; status.textContent = 'Dieser Gutscheincode ist nicht bekannt oder nicht aktiv.'; return; }
-    code = candidate; store.set('belo_code', code);
-    status.className = 'coupon-status success'; status.textContent = 'Gutschein ausgewählt: ' + pct + ' % Rabatt.';
-    ticker(); render(); renderCart(); toast(pct + ' % Rabattcode ausgewählt');
+    status.className = 'coupon-status'; status.textContent = 'Gutschein wird geprüft …';
+    try {
+      const res = await api({ action: 'validateCoupon', code: candidate });
+      if (!res.ok || !res.valid) {
+        status.className = 'coupon-status error';
+        status.textContent = 'Dieser Gutscheincode ist ungültig, nicht aktiv oder bereits eingelöst.';
+        return;
+      }
+      code = candidate; store.set('belo_code', code);
+      status.className = 'coupon-status success'; status.textContent = 'Gutschein ausgewählt: ' + Number(res.prozent) + ' % Rabatt.';
+      ticker(); render(); renderCart(); toast(Number(res.prozent) + ' % Rabattcode ausgewählt');
+    } catch (e) {
+      status.className = 'coupon-status error'; status.textContent = 'Gutschein konnte gerade nicht geprüft werden. Bitte erneut versuchen.';
+    }
   }
   $('#coupon-apply').addEventListener('click', applyCoupon);
   $('#coupon-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } });
@@ -726,7 +736,7 @@
     if (r.top < 70 || r.bottom > window.innerHeight) stage.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
     stage.focus({ preventScroll: true }); kick();
   }
-  function stop(t) {
+  async function stop(t) {
     if (!fly || t < fly.t0) return;
     const f = fly; fly = null;
     const s = posAt(f, t), dist = Math.abs(s.x - zx), win = dist <= tol;
@@ -734,8 +744,19 @@
     burst(s.x, s.y, win);
     if (!win) { miss(dist, f); return; }
     if (!f.practice) {
-      code = 'BELO' + SPIEL.prozent + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
-      store.set('belo_code', code); ticker(); render(); triesUI();
+      overlay('<div class="big win">Treffer!</div><div class="sub">Dein persönlicher Gutscheincode wird erstellt …</div>');
+      try {
+        const issued = await api({ action: 'issueCoupon' });
+        if (!issued.ok || !issued.code) {
+          setTimeout(() => overlay('<div class="big win">Treffer!</div><div class="sub">Dein Gewinn konnte gerade nicht gespeichert werden. Bitte lade die Seite neu und kontaktiere den Shop, falls das Problem bleibt.</div>'), 300);
+          return;
+        }
+        code = normalizedCode(issued.code);
+        store.set('belo_code', code); ticker(); render(); triesUI();
+      } catch (e) {
+        setTimeout(() => overlay('<div class="big win">Treffer!</div><div class="sub">Keine Verbindung zum Gutscheinsystem. Bitte versuche es erneut.</div>'), 300);
+        return;
+      }
     }
     setTimeout(() => overlay(`<div class="big win">Treffer! −${SPIEL.prozent}&nbsp;%</div><div class="sub">Nur ${Math.round(dist)} px daneben</div>${f.practice ? '' : codeBox()}`), 750);
   }
