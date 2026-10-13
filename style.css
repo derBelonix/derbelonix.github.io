@@ -308,3 +308,17 @@ body{background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg 
 .tc-gyro{color:var(--paper);border-color:rgba(255,255,255,.35)}
 .tc-gyro:hover{color:var(--ink)}
 @media (prefers-reduced-motion:reduce){.cb-holo,.tc-one{animation:none}.tc{transition:none}}
+
+/* Gutscheincode im Warenkorb */
+.coupon-box{margin:14px 0;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--paper)}
+.coupon-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 12px;background:transparent;border:0;text-align:left;font:600 13px var(--body);cursor:pointer;color:var(--ink)}
+.coupon-arrow{font-size:18px;transition:transform .2s}
+.coupon-toggle[aria-expanded="true"] .coupon-arrow{transform:rotate(180deg)}
+.coupon-form{padding:0 12px 12px}
+.coupon-form label{display:block;margin-bottom:6px;font:11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.coupon-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+.coupon-row input{min-width:0;width:100%;border:1px solid var(--line);border-radius:999px;padding:11px 13px;background:var(--bg);color:var(--ink);font:13px var(--mono);text-transform:uppercase}
+.coupon-row .buy{width:auto;padding:10px 15px;font-size:13px}
+.coupon-status{margin:8px 0 0;font-size:12px;color:var(--muted)}
+.coupon-status.success{color:var(--good);font-weight:700}
+.coupon-status.error{color:var(--bad)}
