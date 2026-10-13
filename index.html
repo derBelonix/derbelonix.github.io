@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500;62..125,700;62..125,900&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="style.css?v=20261013-7">
+<link rel="stylesheet" href="style.css?v=20261013-9">
 </head>
 <body>
 
@@ -154,7 +154,20 @@
     <div id="cart-pay">
       <p class="cart-note mono">Jedes Teil gibt es nur einmal. Reserviert ist es erst nach der Zahlung.</p>
       <div class="sum" id="sum"></div>
-      <div class="codeinfo" id="codeinfo" hidden></div>
+      <section class="coupon-box" aria-label="Gutscheincode">
+        <button class="coupon-toggle" id="coupon-toggle" type="button" aria-expanded="false" aria-controls="coupon-form">
+          <span>＋ Gutscheincode oder Rabatt</span><span class="coupon-arrow" aria-hidden="true">⌄</span>
+        </button>
+        <div class="coupon-form" id="coupon-form" hidden>
+          <label for="coupon-input">Gutscheincode</label>
+          <div class="coupon-row">
+            <input id="coupon-input" type="text" autocomplete="off" placeholder="z. B. BELO20-VXCT" maxlength="40">
+            <button class="buy" id="coupon-apply" type="button">Einlösen</button>
+          </div>
+          <p class="coupon-status" id="coupon-status" role="status" aria-live="polite"></p>
+        </div>
+        <div class="codeinfo" id="codeinfo" hidden></div>
+      </section>
       <div class="pay cart-pay-chips" id="cart-chips"></div>
       <p class="cart-addr">Lieferadresse und Zahlung gibst du auf der nächsten Seite ein.</p>
       <label class="agree"><input type="checkbox" id="c-agree"><span>Ich habe die <a href="widerruf.html" target="_blank">Widerrufsbelehrung</a> und die <a href="datenschutz.html" target="_blank">Datenschutzerklärung</a> gelesen.</span></label>
@@ -189,6 +202,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="produkte.js?v=20261013-8"></script>
-<script src="app.js?v=20261013-8"></script>
+<script src="app.js?v=20261013-9"></script>
 </body>
 </html>
