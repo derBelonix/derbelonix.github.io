@@ -435,82 +435,141 @@
   }
 
   /* ==========================================================
-     RABATT-SPIEL: Sneaker anhalten
+     RABATT-SPIEL: das Holo-Preisetikett anhalten
      ========================================================== */
   const today = new Date().toISOString().slice(0, 10);
   let gs = store.get('belo_spiel', { day: today, used: 0 });
   if (gs.day !== today) gs = { day: today, used: 0 };
   const stage = $('#stage'), cv = $('#gcv'), cx = cv.getContext('2d');
-  let W = 0, H = 0, fly = null, parts = [], zx = 0, tol = 6, frozen = null, anim = 0;
-  const P = {
-    upper: new Path2D('M16 64 C12 52 18 44 30 42 L72 30 C84 27 90 20 94 12 L122 10 C126 24 136 34 150 38 L180 48 C192 52 196 58 196 64 Z'),
-    heel: new Path2D('M16 64 C12 52 18 44 30 42 L46 38 C40 47 40 56 46 64 Z'),
-    toe: new Path2D('M152 38 L180 48 C192 52 196 58 196 64 L162 64 C162 52 158 45 152 38 Z'),
-    mid: new Path2D('M10 64 L198 64 C199 70 198 74 194 76 L14 76 C10 74 9 70 10 64 Z'),
-    out: new Path2D('M14 76 L194 76 C192 82 188 85 182 85 L22 85 C17 85 14 81 14 76 Z'),
-    tab: new Path2D('M60 56 L104 50 L106 58 L62 64 Z'),
-    laces: new Path2D('M100 22 L108 30 M108 18 L116 34 M116 24 L124 38 M124 28 L132 41 M98 26 L128 40')
-  };
+  let W = 0, H = 0, fly = null, parts = [], rings = [], zx = 0, tol = 6, frozen = null, anim = 0, visible = false;
+  const INK = '#2B2925';
   function size() {
     const r = stage.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1);
     W = r.width; H = r.height; cv.width = W * d; cv.height = H * d; cx.setTransform(d, 0, 0, d, 0, 0);
     tol = Math.max(4, W * SPIEL.toleranz);
   }
-  const sc = () => (W < 520 ? 0.42 : 0.58);
-  function sneaker(x, y, rot, a) {
-    const s = sc();
-    cx.save(); cx.globalAlpha = a; cx.translate(x, y); cx.rotate(rot); cx.scale(s, s); cx.translate(-104, -48);
-    cx.lineJoin = 'round'; cx.lineWidth = 3; cx.strokeStyle = '#2B2925';
-    cx.fillStyle = '#F8F6F2'; cx.fill(P.upper);
-    cx.fillStyle = '#FFD23F'; cx.fill(P.heel); cx.fill(P.toe);
-    cx.fillStyle = '#2B2925'; cx.fill(P.tab);
-    cx.stroke(P.upper);
-    cx.fillStyle = '#FFFFFF'; cx.fill(P.mid); cx.stroke(P.mid);
-    cx.fillStyle = '#B98B57'; cx.fill(P.out); cx.stroke(P.out);
-    cx.lineWidth = 2.4; cx.stroke(P.laces);
+  const sc = () => (W < 520 ? 0.62 : 0.82);
+  const dims = () => { const s = sc(); return { s, w: 150 * s, h: 86 * s }; };
+  function tagPath(w, h) {
+    const n = h * 0.34, r = 8;
+    cx.beginPath(); cx.moveTo(-w / 2 + n, -h / 2); cx.lineTo(w / 2 - r, -h / 2); cx.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    cx.lineTo(w / 2, h / 2 - r); cx.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2); cx.lineTo(-w / 2 + n, h / 2); cx.lineTo(-w / 2, 0); cx.closePath();
+  }
+  function holoGrad(x0, y0, x1, y1, shift) {
+    const g = cx.createLinearGradient(x0, y0, x1, y1);
+    for (let i = 0; i <= 6; i++) g.addColorStop(i / 6, `hsl(${(shift + i * 55) % 360},88%,82%)`);
+    return g;
+  }
+  // Etikett zeichnen: flip = Drehung um die Hochachse (3D), rot = Neigung
+  function tag(x, y, rot, flip, a, shadow) {
+    const { s, w, h } = dims(), c = Math.cos(flip), front = c >= 0, sx = Math.max(0.06, Math.abs(c));
+    cx.save(); cx.globalAlpha = a; cx.translate(x, y); cx.rotate(rot); cx.scale(sx, 1);
+    if (shadow) { cx.shadowColor = 'rgba(43,41,37,.28)'; cx.shadowBlur = 18 * s; cx.shadowOffsetY = 10 * s; }
+    tagPath(w, h);
+    cx.fillStyle = front ? holoGrad(-w / 2, -h / 2, w / 2, h / 2, ((flip * 57) % 360) + 360) : '#F8F6F2';
+    cx.fill(); cx.shadowColor = 'transparent';
+    // Glanzstreifen, wandert mit der Drehung
+    cx.save(); tagPath(w, h); cx.clip();
+    const k = ((Math.sin(flip * 1.3) + 1) / 2) * w * 1.6 - w * 0.8, g = cx.createLinearGradient(k - w * 0.3, -h, k + w * 0.3, h);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,.8)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    cx.fillStyle = g; cx.fillRect(-w, -h, w * 2, h * 2); cx.restore();
+    // Rand + Steppnaht
+    cx.lineJoin = 'round'; cx.lineWidth = 2.4; cx.strokeStyle = INK; tagPath(w, h); cx.stroke();
+    cx.save(); cx.scale(0.9, 0.82); cx.setLineDash([4 * s, 3 * s]); cx.lineWidth = 1.2; cx.strokeStyle = 'rgba(43,41,37,.45)'; tagPath(w, h); cx.stroke(); cx.restore();
+    // Metallöse
+    const ex = -w / 2 + h * 0.36, R = h * 0.13, mg = cx.createLinearGradient(ex - R, -R, ex + R, R);
+    mg.addColorStop(0, '#F6E4A8'); mg.addColorStop(0.5, '#B48635'); mg.addColorStop(1, '#FBEDC2');
+    cx.fillStyle = mg; cx.beginPath(); cx.arc(ex, 0, R, 0, 7); cx.fill(); cx.lineWidth = 1; cx.strokeStyle = 'rgba(43,41,37,.5)'; cx.stroke();
+    cx.fillStyle = '#EFECE6'; cx.beginPath(); cx.arc(ex, 0, R * 0.5, 0, 7); cx.fill();
+    // Schrift
+    cx.fillStyle = INK; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    const tx = w * 0.1;
+    if (front) {
+      cx.font = `500 ${Math.round(9 * s)}px 'JetBrains Mono',monospace`; cx.fillText('BELO VINTAGE', tx, -h * 0.29);
+      cx.font = `900 ${Math.round(40 * s)}px 'Archivo','Arial Narrow',sans-serif`; cx.fillText('−' + SPIEL.prozent + '%', tx, h * 0.05);
+      cx.font = `500 ${Math.round(8 * s)}px 'JetBrains Mono',monospace`; cx.fillText('NUR BEI TREFFER', tx, h * 0.31);
+    } else {
+      cx.font = `900 ${Math.round(24 * s)}px 'Archivo','Arial Narrow',sans-serif`; cx.fillText('ECHT', tx, -h * 0.08);
+      cx.font = `500 ${Math.round(8 * s)}px 'JetBrains Mono',monospace`; cx.fillText('GEPRÜFT · GEMESSEN', tx, h * 0.2);
+    }
     cx.restore();
+  }
+  // Weltposition der Öse (für die Schnur)
+  function eye(q) {
+    const { w, h } = dims(), lx = (-w / 2 + h * 0.36) * Math.max(0.06, Math.abs(Math.cos(q.flip)));
+    return { x: q.x + lx * Math.cos(q.rot), y: q.y + lx * Math.sin(q.rot) };
+  }
+  function rope(pts) {
+    if (pts.length < 2) return;
+    cx.strokeStyle = 'rgba(43,41,37,.75)'; cx.lineWidth = 1.6; cx.lineCap = 'round'; cx.beginPath(); cx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) { const mx = (pts[i].x + pts[i + 1].x) / 2, my = (pts[i].y + pts[i + 1].y) / 2; cx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my); }
+    const l = pts[pts.length - 1]; cx.lineTo(l.x, l.y); cx.stroke();
+  }
+  function star(x, y, r) {
+    cx.beginPath(); for (let i = 0; i < 8; i++) { const a = (i * Math.PI) / 4, rr = i % 2 ? r * 0.35 : r; cx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } cx.closePath(); cx.fill();
   }
   function posAt(f, t) {
     const p = (t - f.t0) / f.dur, k2 = 2 * Math.PI * f.k;
     const xp = p + f.a * (Math.sin(k2 * p + f.ph) - Math.sin(f.ph)) / k2;
-    return { p, x: f.from + (f.to - f.from) * xp, y: H * 0.5 + Math.sin(p * Math.PI * f.wv + f.ph2) * H * 0.16, rot: p * Math.PI * 2 * f.spin };
+    return { p, x: f.from + (f.to - f.from) * xp, y: H * 0.5 + Math.sin(p * Math.PI * f.wv + f.ph2) * H * 0.17,
+      rot: Math.sin(p * Math.PI * 2 + f.ph) * 0.28, flip: p * Math.PI * 2 * f.spin };
+  }
+  function idlePose(now) {
+    const t = now / 1000;
+    return { x: W * 0.2, y: H * 0.5 + Math.sin(t * 1.4) * 8, rot: Math.sin(t * 0.9) * 0.08, flip: Math.sin(t * 0.7) * 1.1 };
   }
   function draw(now) {
     cx.clearRect(0, 0, W, H);
-    cx.strokeStyle = 'rgba(111,106,99,.16)'; cx.lineWidth = 1;
+    cx.strokeStyle = 'rgba(111,106,99,.14)'; cx.lineWidth = 1;
     for (let y = 20; y < H; y += 26) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
-    cx.fillStyle = 'rgba(255,210,63,.35)'; cx.fillRect(zx - W * 0.06, 0, W * 0.12, H);
-    cx.fillStyle = 'rgba(255,210,63,.95)'; cx.fillRect(zx - tol, 0, tol * 2, H);
-    cx.fillStyle = '#2B2925'; cx.fillRect(zx - 1, 0, 2, H);
-    cx.font = "12px 'JetBrains Mono',monospace"; cx.textAlign = 'center'; cx.fillText('HIER STOPPEN', zx, 16);
+    // Zielzone in Holo
+    const zg = cx.createLinearGradient(0, 0, 0, H); for (let i = 0; i <= 4; i++) zg.addColorStop(i / 4, `hsla(${(now / 20 + i * 70) % 360},90%,78%,.9)`);
+    cx.fillStyle = 'rgba(43,41,37,.05)'; cx.fillRect(zx - W * 0.06, 0, W * 0.12, H);
+    cx.fillStyle = zg; cx.fillRect(zx - tol, 0, tol * 2, H);
+    cx.fillStyle = INK; cx.fillRect(zx - 1, 0, 2, H);
+    cx.font = "12px 'JetBrains Mono',monospace"; cx.textAlign = 'center'; cx.textBaseline = 'alphabetic'; cx.fillText('HIER STOPPEN', zx, 16);
     cx.textAlign = 'left'; cx.fillStyle = '#6F6A63'; cx.fillText(fly ? 'TIPPEN · KLICKEN · LEERTASTE' : 'RABATT-SPIEL', 12, H - 12);
     if (fly) {
-      for (let i = 7; i >= 1; i--) { const q = posAt(fly, now - i * 16); if (q.p >= 0) sneaker(q.x, q.y, q.rot, 0.05 + 0.03 * (7 - i)); }
-      const s = posAt(fly, now);
-      cx.strokeStyle = 'rgba(43,41,37,.25)'; cx.lineWidth = 2;
-      for (let i = 0; i < 3; i++) { const yy = s.y - 14 + i * 14; cx.beginPath(); cx.moveTo(s.x - 90 * sc() - i * 10, yy); cx.lineTo(s.x - 150 * sc() - i * 18, yy); cx.stroke(); }
-      sneaker(s.x, s.y, s.rot, 1);
+      const pts = []; for (let i = 0; i <= 12; i++) { const q = posAt(fly, Math.max(fly.t0, now - i * 14)); pts.push(eye(q)); }
+      for (let i = 5; i >= 1; i--) { const q = posAt(fly, now - i * 18); if (q.p >= 0) tag(q.x, q.y, q.rot, q.flip, 0.06 + 0.04 * (5 - i), false); }
+      rope(pts);
+      const s = posAt(fly, now); tag(s.x, s.y, s.rot, s.flip, 1, true);
     } else if (frozen) {
-      sneaker(frozen.x, frozen.y, frozen.rot, 1);
+      const e = eye(frozen); rope([e, { x: e.x - 30, y: e.y + 18 }, { x: e.x - 70, y: e.y + 26 }]);
+      tag(frozen.x, frozen.y, frozen.rot, frozen.flip, 1, true);
       cx.strokeStyle = frozen.win ? '#2F6B4F' : '#B23A2E'; cx.lineWidth = 2; cx.setLineDash([4, 4]);
-      cx.beginPath(); cx.moveTo(frozen.x, H * 0.18); cx.lineTo(frozen.x, H * 0.82); cx.stroke(); cx.setLineDash([]);
-    } else sneaker(W * 0.18, H * 0.5, -0.25, 1);
-    parts.forEach((q) => { cx.globalAlpha = Math.max(0, q.l); cx.fillStyle = q.c; cx.fillRect(q.x, q.y, q.s, q.s); });
+      cx.beginPath(); cx.moveTo(frozen.x, H * 0.12); cx.lineTo(frozen.x, H * 0.88); cx.stroke(); cx.setLineDash([]);
+    } else {
+      const q = idlePose(now), e = eye(q);
+      rope([{ x: 0, y: q.y - 30 }, { x: e.x * 0.5, y: q.y + 14 }, e]);
+      tag(q.x, q.y, q.rot, q.flip, 1, true);
+    }
+    rings.forEach((r) => { cx.globalAlpha = Math.max(0, r.l); cx.lineWidth = 3; cx.strokeStyle = `hsl(${(r.r * 3) % 360},85%,70%)`; cx.beginPath(); cx.arc(r.x, r.y, r.r, 0, 7); cx.stroke(); });
+    parts.forEach((q) => { cx.globalAlpha = Math.max(0, q.l); cx.fillStyle = q.c; if (q.star) star(q.x, q.y, q.s); else cx.fillRect(q.x, q.y, q.s, q.s * 0.6); });
     cx.globalAlpha = 1;
   }
   function loop(now) {
-    parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += 0.25; q.l -= 0.018; });
+    if (fly) {
+      const s = posAt(fly, now);
+      if (s.p >= 0 && Math.random() < 0.7) parts.push({ x: s.x - 20, y: s.y + (Math.random() - 0.5) * 30, vx: -1 - Math.random() * 2, vy: (Math.random() - 0.5) * 1.2, g: 0, l: 0.7, s: 2 + Math.random() * 3, star: true, c: `hsl(${Math.random() * 360},90%,75%)` });
+      if (s.p >= 1) { const f = fly; fly = null; miss(null, f); }
+    }
+    parts.forEach((q) => { q.x += q.vx; q.y += q.vy; q.vy += q.g; q.l -= 0.018; });
     parts = parts.filter((q) => q.l > 0);
-    if (fly && posAt(fly, now).p >= 1) { const f = fly; fly = null; miss(null, f); }
+    rings.forEach((r) => { r.r += 6; r.l -= 0.03; }); rings = rings.filter((r) => r.l > 0);
     draw(now);
-    anim = fly || parts.length ? requestAnimationFrame(loop) : 0;
+    const idle = !fly && !frozen && visible && !reduce;
+    anim = fly || parts.length || rings.length || idle ? requestAnimationFrame(loop) : 0;
   }
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const kick = () => { if (!anim) anim = requestAnimationFrame(loop); };
+  if ('IntersectionObserver' in window) new IntersectionObserver((en) => { visible = en[0].isIntersecting; if (visible) kick(); }).observe(stage);
   function burst(x, y, win) {
-    const cols = win ? ['#FFD23F', '#2F6B4F', '#2B2925', '#F8F6F2', '#B98B57'] : ['#6F6A63', '#B23A2E'];
-    for (let i = 0; i < (win ? 90 : 24); i++) {
-      const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * (win ? 7 : 3);
-      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2, l: 1, s: 3 + Math.random() * 4, c: cols[i % cols.length] });
+    if (win) { rings.push({ x, y, r: 10, l: 1 }, { x, y, r: -30, l: 1.3 }); }
+    for (let i = 0; i < (win ? 120 : 26); i++) {
+      const a = Math.random() * Math.PI * 2, v = 2 + Math.random() * (win ? 8 : 3);
+      parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 2, g: 0.22, l: 1, s: 3 + Math.random() * 5, star: win && i % 3 === 0,
+        c: win ? `hsl(${Math.random() * 360},85%,${60 + Math.random() * 20}%)` : (i % 2 ? '#6F6A63' : '#B23A2E') });
     }
     kick();
   }
@@ -528,38 +587,38 @@
     triesUI();
     if (code) overlay(`<div class="big win">${SPIEL.prozent} % gesichert</div>${codeBox()}<div class="sub">${SPIEL.anKasse ? 'Wird im Warenkorb automatisch abgezogen' : 'Steht im Warenkorb, schick ihn mir nach der Bestellung'}</div>`);
     else if (gs.used >= SPIEL.versuche) overlay(`<div class="big lose">Für heute vorbei</div><div class="sub">Morgen gibt es ${SPIEL.versuche} neue Versuche</div>`);
-    else overlay(`<div class="big">Bereit?</div><div class="sub">Starten, dann auf der Linie tippen</div>`);
+    else overlay(`<div class="big">Bereit?</div><div class="sub">Starten, dann tippen, wenn das Etikett auf der Linie ist</div>`);
   }
   function start() {
     if (fly) return;
     const practice = !!code;
     if (!practice) { if (gs.used >= SPIEL.versuche) return; gs.used++; store.set('belo_spiel', gs); triesUI(); }
-    $('#result').hidden = true; frozen = null; parts = []; size();
+    $('#result').hidden = true; frozen = null; parts = []; rings = []; size();
     zx = W * (0.3 + Math.random() * 0.4);
-    const half = 104 * sc(), [a, b] = SPIEL.flugzeit;
+    const half = dims().w / 2, [a, b] = SPIEL.flugzeit;
     const base = a + Math.random() * (b - a) - (practice ? 0 : (gs.used - 1) * 0.07);
-    fly = { t0: performance.now() + 350, dur: base * 1000, from: -half - 20, to: W + half + 20,
+    fly = { t0: performance.now() + 350, dur: base * 1000, from: -half - 40, to: W + half + 40,
       a: 0.35 + Math.random() * 0.3, k: 1 + Math.floor(Math.random() * 2), ph: Math.random() * 6.28,
-      wv: 1 + Math.random() * 2, ph2: Math.random() * 6.28, spin: (Math.random() < 0.5 ? -1 : 1) * (1 + Math.random()), practice };
+      wv: 1 + Math.random() * 2, ph2: Math.random() * 6.28, spin: (Math.random() < 0.5 ? -1 : 1) * (1.2 + Math.random()), practice };
     stage.focus({ preventScroll: true }); kick();
   }
   function stop(t) {
     if (!fly || t < fly.t0) return;
     const f = fly; fly = null;
     const s = posAt(f, t), dist = Math.abs(s.x - zx), win = dist <= tol;
-    frozen = { x: s.x, y: s.y, rot: s.rot, win };
+    frozen = { x: s.x, y: s.y, rot: s.rot, flip: win ? 0 : s.flip, win };
     burst(s.x, s.y, win);
     if (!win) { miss(dist, f); return; }
     if (!f.practice) {
       code = 'BELO' + SPIEL.prozent + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
       store.set('belo_code', code); ticker(); render(); triesUI();
     }
-    setTimeout(() => overlay(`<div class="big win">Treffer! −${SPIEL.prozent} %</div><div class="sub">Nur ${Math.round(dist)} px daneben</div>${f.practice ? '' : codeBox()}`), 650);
+    setTimeout(() => overlay(`<div class="big win">Treffer! −${SPIEL.prozent} %</div><div class="sub">Nur ${Math.round(dist)} px daneben</div>${f.practice ? '' : codeBox()}`), 750);
   }
   function miss(dist, f) {
     const left = SPIEL.versuche - gs.used;
     const tail = f.practice ? '' : left > 0 ? 'Noch ' + left + (left === 1 ? ' Versuch' : ' Versuche') + ' heute' : 'Morgen hast du neue Versuche';
-    const h = dist === null ? `<div class="big lose">Zu spät</div><div class="sub">Er ist durchgeflogen. ${tail}</div>`
+    const h = dist === null ? `<div class="big lose">Zu spät</div><div class="sub">Es ist durchgeflogen. ${tail}</div>`
       : dist < W * 0.06 ? `<div class="big near">So knapp!</div><div class="sub">${Math.round(dist)} px daneben. ${tail}</div>`
       : `<div class="big lose">Daneben</div><div class="sub">${Math.round(dist)} px daneben. ${tail}</div>`;
     setTimeout(() => overlay(h), dist === null ? 0 : 600);
