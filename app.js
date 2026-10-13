@@ -113,6 +113,22 @@
   }
   $('#leine').addEventListener('click', (e) => { const b = e.target.closest('.peg'); if (b) openItem(b.dataset.id, b); });
 
+  // ---------- Holo-Schimmer im Namen: folgt Maus/Finger, sonst wandert er langsam ----------
+  (function holo() {
+    const h = $('#hero-name'), hero = $('.hero');
+    if (!h || !hero || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let lastMove = 0, t0 = performance.now();
+    const set = (x, y) => { h.style.setProperty('--mx', x.toFixed(1) + '%'); h.style.setProperty('--my', y.toFixed(1) + '%'); };
+    hero.addEventListener('pointermove', (e) => {
+      const r = h.getBoundingClientRect(); lastMove = performance.now();
+      set(((e.clientX - r.left) / r.width) * 100, ((e.clientY - r.top) / r.height) * 100);
+    });
+    (function drift(now) {
+      if (now - lastMove > 1500) { const t = (now - t0) / 1000; set(50 + Math.sin(t * 0.6) * 45, 50 + Math.sin(t * 1.1) * 35); }
+      requestAnimationFrame(drift);
+    })(t0);
+  })();
+
   // ---------- Filter ----------
   const st = { cat: 'Alle', size: '', sort: 'neu', avail: false };
   const cats = ['Alle', ...new Set(PRODUKTE.map((p) => p.kategorie))];
