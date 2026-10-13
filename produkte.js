@@ -68,7 +68,7 @@ const PRODUKTE = [
     groesse: 'S',
     zustand: '9/10 – kaum Gebrauchsspuren',
     preis: 44.99,
-    bilder: ['bilder/adidas-crewneck-navy-1.jpg', 'bilder/adidas-crewneck-navy-2.jpg', 'bilder/adidas-crewneck-navy-3.jpg', 'bilder/adidas-crewneck-navy-4.jpg'],
+    bilder: ['adidas-crewneck-navy-1.jpg', 'adidas-crewneck-navy-2.jpg', 'adidas-crewneck-navy-3.jpg', 'adidas-crewneck-navy-4.jpg'],
     masse: { 'Länge': 'ca. 65 cm', 'Breite unten (Saum)': 'ca. 44 cm' },
     beschreibung: 'Vintage Adidas Crewneck in Navy mit rot gesticktem Logo, roten Paspeln vorne und den drei weißen Streifen über den Schultern. Weicher Sweat, Rippbündchen an Saum und Ärmeln. Kaum Gebrauchsspuren.',
     neu: true,
