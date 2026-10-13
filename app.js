@@ -98,7 +98,7 @@
   function leine() {
     const box = $('#leine');
     const avail = PRODUKTE.filter((p) => !isSold(p) && p.bilder && p.bilder.length);
-    const pool = avail.length ? avail : PRODUKTE.filter((p) => p.bilder && p.bilder.length);
+    const pool = (avail.length ? avail : PRODUKTE.filter((p) => p.bilder && p.bilder.length)).slice().reverse();
     const max = window.innerWidth < 600 ? 3 : 4, cards = [];
     for (let k = 0; cards.length < max && k < 6; k++) {
       pool.forEach((p) => { if (cards.length < max && p.bilder[k]) cards.push({ p, src: p.bilder[k] }); });
@@ -160,7 +160,7 @@
         if (isSold(a.p) !== isSold(b.p)) return isSold(a.p) ? 1 : -1;
         if (st.sort === 'preis-auf') return a.p.preis - b.p.preis;
         if (st.sort === 'preis-ab') return b.p.preis - a.p.preis;
-        return (b.p.neu === true) - (a.p.neu === true) || a.i - b.i;
+        return (b.p.neu === true) - (a.p.neu === true) || b.i - a.i; // neueste Einträge (unten in produkte.js) zuerst
       });
     $('#count').textContent = list.length + (list.length === 1 ? ' Teil' : ' Teile') + ' · ' + free + ' verfügbar';
     $('#grid').innerHTML = list.length ? list.map(({ p, i }) => {
