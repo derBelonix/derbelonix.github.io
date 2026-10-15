@@ -322,3 +322,41 @@ body{background-color:var(--bg);background-image:url("data:image/svg+xml,%3Csvg 
 .coupon-status{margin:8px 0 0;font-size:12px;color:var(--muted)}
 .coupon-status.success{color:var(--good);font-weight:700}
 .coupon-status.error{color:var(--bad)}
+
+
+/* ===== DROP 001 LOCK SCREEN ===== */
+html.drop-lock-pending body{overflow:hidden}
+body.drop-locked{overflow:hidden}
+body.drop-locked > :not(#drop-lock){visibility:hidden!important;pointer-events:none!important}
+#drop-lock{position:fixed;inset:0;z-index:99999;overflow:auto;display:flex;flex-direction:column;justify-content:space-between;min-height:100vh;min-height:100dvh;padding:clamp(20px,3.2vw,48px);background:#10100f;color:#f3f0e9;font-family:var(--body);isolation:isolate}
+#drop-lock[hidden]{display:none}
+.lock-grain{position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.18;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E")}
+.lock-top,.lock-bottom{display:flex;align-items:center;justify-content:space-between;gap:16px;font-family:var(--mono);font-size:10px;letter-spacing:.17em}
+.lock-mark{font-family:var(--display);font-weight:900;font-size:28px;letter-spacing:-.08em}.lock-mark span{font:10px var(--mono);vertical-align:top;letter-spacing:0;margin-left:3px}
+.lock-status{display:flex;align-items:center;gap:9px;color:#b7b2a8}.lock-status i{width:7px;height:7px;border-radius:50%;background:#d5bd83;box-shadow:0 0 15px #d5bd8380}
+.lock-main{width:min(100%,1000px);margin:auto; padding:clamp(44px,8vh,100px) 0;text-align:center}
+.lock-kicker{font:11px var(--mono);letter-spacing:.27em;color:#cdb77f;margin:0 0 24px}
+.lock-main h1{font-family:var(--display);font-weight:900;font-stretch:62%;font-size:clamp(58px,11.5vw,150px);line-height:.79;letter-spacing:-.045em;margin:0;text-transform:uppercase}
+.lock-main h1 span{color:transparent;-webkit-text-stroke:1px #f3f0e9}
+.lock-copy{color:#aaa69e;font-size:clamp(13px,1.4vw,16px);margin:28px 0 34px}
+.lock-date-label{font:10px var(--mono);letter-spacing:.2em;color:#cdb77f;margin-bottom:15px}
+.lock-clock{display:flex;align-items:center;justify-content:center;gap:clamp(8px,2.2vw,26px);margin:0 auto;width:fit-content;max-width:100%}
+.lock-clock>div{display:flex;flex-direction:column;align-items:center;min-width:clamp(54px,10vw,125px)}
+.lock-clock strong{font-family:var(--display);font-stretch:65%;font-weight:900;font-size:clamp(36px,7.8vw,96px);line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.lock-clock div span{font:9px var(--mono);letter-spacing:.18em;color:#8e8a82;margin-top:12px}
+.clock-colon{font-family:var(--display);font-size:clamp(24px,4vw,48px);font-weight:500;color:#776d55;align-self:flex-start;margin-top:0}
+.lock-rule{display:flex;align-items:center;gap:14px;width:min(100%,460px);margin:36px auto 32px;color:#79746b;font:9px var(--mono);letter-spacing:.16em}
+.lock-rule span{height:1px;background:#383630;flex:1}
+.lock-rule i{font-style:normal;white-space:nowrap}
+.early-form{width:min(100%,450px);margin:0 auto;text-align:left}
+.early-form label{display:block;font:9px var(--mono);letter-spacing:.13em;color:#aaa69e;margin-bottom:10px}
+.early-input-row{display:flex;border:1px solid #49463e;background:#171715;padding:5px;gap:6px}
+.early-input-row input{min-width:0;flex:1;background:transparent;border:0;outline:0;color:#f3f0e9;padding:12px;font:13px var(--mono)}
+.early-input-row input::placeholder{color:#706d66}
+.early-input-row button{background:#d7c18c;color:#15140f;border:0;padding:0 15px;font:10px var(--mono);letter-spacing:.06em;font-weight:700;cursor:pointer;white-space:nowrap}
+.early-input-row button:hover{background:#f0dfae}
+.early-form #early-status{font-size:11px;color:#7f7b72;min-height:17px;margin:10px 0 0}
+.early-form #early-status.is-error{color:#e5a49b}
+.lock-bottom{color:#77736b;border-top:1px solid #302f2a;padding-top:16px}
+@media(max-width:520px){#drop-lock{padding:20px}.lock-main{padding:48px 0}.lock-main h1{font-size:clamp(56px,15vw,86px)}.lock-clock{gap:5px}.lock-clock>div{min-width:0;flex:1}.lock-clock strong{font-size:clamp(30px,9vw,48px)}.lock-clock div span{font-size:7px;letter-spacing:.1em}.clock-colon{font-size:24px}.lock-bottom{font-size:8px;letter-spacing:.08em}.early-input-row button{padding:0 10px;font-size:9px}}
+@media(prefers-reduced-motion:reduce){.lock-status i{box-shadow:none}}
