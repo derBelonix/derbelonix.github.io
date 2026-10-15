@@ -6,6 +6,7 @@
 <title>Vintage Shop</title>
 <meta name="description" content="Handverlesene Vintage- und Streetwear-Teile. Jedes Teil gibt es nur einmal.">
 <meta name="theme-color" content="#14120F">
+<script>document.documentElement.classList.add("drop-lock-pending");</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=20261013-2">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BELO VINTAGE">
@@ -21,7 +22,31 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500;62..125,700;62..125,900&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="style.css?v=20261013-9">
 </head>
-<body>
+<body class="drop-locked">
+
+<section id="drop-lock" aria-labelledby="lock-title">
+  <div class="lock-grain" aria-hidden="true"></div>
+  <div class="lock-top"><span class="lock-mark">BV<span>®</span></span><span class="lock-status"><i></i> PRIVATE ACCESS</span></div>
+  <div class="lock-main">
+    <p class="lock-kicker">BELO VINTAGE · DROP 001</p>
+    <h1 id="lock-title">NOT FOR<br><span>EVERYONE.</span></h1>
+    <p class="lock-copy">Der erste Drop kommt. Einzelstücke. Keine zweite Runde.</p>
+    <div class="lock-date-label">UNLOCKS FEBRUARY 27, 2027</div>
+    <div class="lock-clock" aria-label="Countdown bis zum ersten Drop">
+      <div><strong id="cd-days">000</strong><span>TAGE</span></div><b class="clock-colon">:</b>
+      <div><strong id="cd-hours">00</strong><span>STUNDEN</span></div><b class="clock-colon">:</b>
+      <div><strong id="cd-minutes">00</strong><span>MINUTEN</span></div><b class="clock-colon">:</b>
+      <div><strong id="cd-seconds">00</strong><span>SEKUNDEN</span></div>
+    </div>
+    <div class="lock-rule"><span></span><i>THE WAIT IS PART OF IT</i><span></span></div>
+    <form id="early-form" class="early-form">
+      <label for="early-key">HAST DU EINEN EARLY-ACCESS-KEY?</label>
+      <div class="early-input-row"><input id="early-key" name="key" type="password" placeholder="Key eingeben" autocomplete="off" required maxlength="80"><button type="submit">FREISCHALTEN <span>↗</span></button></div>
+      <p id="early-status" role="status" aria-live="polite">Der Shop bleibt bis zum Drop geschlossen.</p>
+    </form>
+  </div>
+  <div class="lock-bottom"><span>BELO VINTAGE</span><span>EST. 2026</span><span>BERLIN · WORLDWIDE</span></div>
+</section>
 
 <div class="drops">
   <a class="drops-live" href="#shop"><i aria-hidden="true"></i><span class="lv" id="lv" hidden><b id="live-v">0</b> im Shop</span><span class="lv-sep" id="lv-sep" hidden></span><span><b id="drops-n">0</b> <span class="hide-s">Teile</span> verfügbar</span></a>
@@ -211,6 +236,20 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<script>
+(function(){
+  const target=Date.UTC(2027,1,26,23,0,0);
+  const pad=(n,len=2)=>String(n).padStart(len,"0");
+  function tick(){let ms=Math.max(0,target-Date.now());const d=Math.floor(ms/86400000);ms%=86400000;const hr=Math.floor(ms/3600000);ms%=3600000;const min=Math.floor(ms/60000);ms%=60000;const sec=Math.floor(ms/1000);
+    document.getElementById("cd-days").textContent=pad(d,3);document.getElementById("cd-hours").textContent=pad(hr);document.getElementById("cd-minutes").textContent=pad(min);document.getElementById("cd-seconds").textContent=pad(sec);
+    if(target-Date.now()<=0){unlock("Der erste Drop ist jetzt geöffnet.");document.getElementById("early-form").hidden=true;}
+  }
+  function unlock(message){document.body.classList.remove("drop-locked");document.documentElement.classList.remove("drop-lock-pending");sessionStorage.setItem("belo_drop_access","1");const s=document.getElementById("early-status");if(s)s.textContent=message;}
+  if(sessionStorage.getItem("belo_drop_access")==="1"){document.body.classList.remove("drop-locked");document.documentElement.classList.remove("drop-lock-pending");}
+  document.getElementById("early-form").addEventListener("submit",function(e){e.preventDefault();const key=document.getElementById("early-key").value.trim();const status=document.getElementById("early-status");if(key.toUpperCase()==="BELOEARLY27"){unlock("Access granted. Willkommen bei BELO VINTAGE.");}else{status.textContent="Dieser Key ist nicht gültig. Versuch es erneut.";status.classList.add("is-error");}});
+  tick();setInterval(tick,1000);
+})();
+</script>
 <script src="produkte.js?v=20261013-8"></script>
 <script src="app.js?v=20261013-9"></script>
 </body>
