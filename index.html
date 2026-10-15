@@ -244,8 +244,8 @@
     document.getElementById("cd-days").textContent=pad(d,3);document.getElementById("cd-hours").textContent=pad(hr);document.getElementById("cd-minutes").textContent=pad(min);document.getElementById("cd-seconds").textContent=pad(sec);
     if(target-Date.now()<=0){unlock("Der erste Drop ist jetzt geöffnet.");document.getElementById("early-form").hidden=true;}
   }
-  function unlock(message){document.body.classList.remove("drop-locked");document.documentElement.classList.remove("drop-lock-pending");sessionStorage.setItem("belo_drop_access","1");const s=document.getElementById("early-status");if(s)s.textContent=message;}
-  if(sessionStorage.getItem("belo_drop_access")==="1"){document.body.classList.remove("drop-locked");document.documentElement.classList.remove("drop-lock-pending");}
+  function unlock(message){document.body.classList.remove("drop-locked");document.documentElement.classList.remove("drop-lock-pending");sessionStorage.setItem("belo_drop_access","1");document.getElementById("drop-lock").hidden=true;const s=document.getElementById("early-status");if(s)s.textContent=message;}
+  if(sessionStorage.getItem("belo_drop_access")==="1"){document.body.classList.remove("drop-locked");document.documentElement.classList.remove("drop-lock-pending");document.getElementById("drop-lock").hidden=true;}
   document.getElementById("early-form").addEventListener("submit",function(e){e.preventDefault();const key=document.getElementById("early-key").value.trim();const status=document.getElementById("early-status");if(key.toUpperCase()==="BELOEARLY27"){unlock("Access granted. Willkommen bei BELO VINTAGE.");}else{status.textContent="Dieser Key ist nicht gültig. Versuch es erneut.";status.classList.add("is-error");}});
   tick();setInterval(tick,1000);
 })();
